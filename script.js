@@ -127,32 +127,22 @@ function cerrarMenus(){
 }
 
 // ── Cargar JSON ──
-fetch('resumen_full.json')
-  .then(r=>r.json())
-  .then(data=>{
-    // Normalizar campos de texto: trim + uppercase
-    const CAMPOS_NORM=['FAMILIA AVERIA','FAMILIA','ORIGEN AVISO','TURNO','VHLO','TIPO ORDEN'];
-    const normStr=s=>s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-    data.forEach(d=>{
-      CAMPOS_NORM.forEach(k=>{ if(d[k]) d[k]=normStr(d[k]); });
-      try {
-        if(!d['FECHA AVISO']) return;
-        const parts=d['FECHA AVISO'].split('/').map(Number);
-        if(parts.length!==3 || parts.some(isNaN)) return;
-        const fecha=new Date(parts[2],parts[1]-1,parts[0]);
-        if(!isNaN(fecha)) d.fechaJS=fecha;
-      } catch(e) {}
-    });
-    window.dataTabla=data;
-    cargarEstado();
-    inicializarFechas();
-    inicializarTabla();
-    crearGraficos();
-    renderTags();
-    actualizarGraficos();
-    iniciarResizeAltura();
+fetch('/resumen_full.json')
+  .then(r => {
+    if (!r.ok) {
+      throw new Error(`Error al cargar JSON: ${r.status} ${r.statusText}`);
+    }
+    return r.json();
   })
-  .catch(e=>console.error('Error JSON:',e));
+  .then(data => {
+    console.log('JSON cargado con éxito. Primeros items:', data.slice(0, 2)); // ← debug importante
+    // el resto de tu código: normalizar, window.dataTabla = data, etc.
+  })
+  .catch(e => {
+    console.error('Error al cargar resumen_full.json:', e);
+    // Opcional: mostrar mensaje visible en la página
+    // document.body.insertAdjacentHTML('beforeend', '<div style="color:red; text-align:center; padding:20px;">Error al cargar los datos: ' + e.message + '</div>');
+  });
 
 // ── Fechas ──
 function inicializarFechas(){
