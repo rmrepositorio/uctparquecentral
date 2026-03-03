@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unidad Control Tráfico - Parque Central - Dashboard</title>
+<title>PARQUE CENTRAL - Dashboard - UCT</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -107,6 +107,23 @@
   </div>
 
   <div class="chart-row" id="row-5">
+    <div class="chart-panel" id="panel-carga-trasera">
+      <div class="panel-header">
+        <span class="panel-title">Carga Trasera — Subfamilias</span>
+      </div>
+      <canvas id="graficoCargaTrasera"></canvas>
+      <div class="resize-handle" data-panel="panel-carga-trasera"></div>
+    </div>
+    <div class="chart-panel" id="panel-carga-lateral">
+      <div class="panel-header">
+        <span class="panel-title">Carga Lateral — Subfamilias</span>
+      </div>
+      <canvas id="graficoCargaLateral"></canvas>
+      <div class="resize-handle" data-panel="panel-carga-lateral"></div>
+    </div>
+  </div>
+
+  <div class="chart-row" id="row-6">
     <div class="chart-panel wide" id="panel-evolucion">
       <div class="panel-header">
         <span class="panel-title">Evolución mensual por familia</span>

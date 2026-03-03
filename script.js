@@ -1,5 +1,24 @@
 // ── Paleta ──
 const PALETA = ['#00d4aa','#7c6fe0','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#f78c6b','#88d498','#c77dff','#48cae4','#f4a261','#e76f51','#2ec4b6','#e9c46a','#a8dadc','#457b9d','#e63946','#2a9d8f','#f3722c'];
+
+// ── Subfamilias de vehículos ──
+function getSubfamiliaTrasera(vhlo) {
+  const n = parseInt(vhlo);
+  if (isNaN(n)) return null;
+  if (n === 140 || n === 146) return 'MEDIANOS';
+  if (n >= 142 && n <= 183) return '2 EJES';
+  return null;
+}
+
+function getSubfamiliaLateral(vhlo) {
+  const n = parseInt(vhlo);
+  if (isNaN(n)) return null;
+  if (n >= 1100 && n <= 1121) return 'FARID ANTIGUOS';
+  if (n >= 1135 && n <= 1138) return 'FARID NUEVOS';
+  if (n >= 1130 && n <= 1334) return 'OMB';
+  if (n >= 3100 && n <= 3123) return 'WASTERRENT';
+  return null;
+}
 function genColores(n){ return Array.from({length:n},(_,i)=>PALETA[i%PALETA.length]); }
 
 // ── Estado ──
@@ -277,6 +296,55 @@ function crearGraficos(){
     }
   });
 
+  // ── Subfamilias Carga Trasera ──
+  function crearDoughnutSubfamilia(canvasId, titulo) {
+    return new Chart(document.getElementById(canvasId).getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: modoOscuro ? '#0f0f1a' : '#f0f4ff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: 50 },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => {
+            const tot = ctx.dataset.data.reduce((a,b) => a+b, 0);
+            return ` ${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
+          }}}
+        }
+      },
+      plugins: [{
+        id: 'subfamiliaLabels',
+        afterDraw(chart) {
+          const ctx2 = chart.ctx, ds = chart.data.datasets[0], meta = chart.getDatasetMeta(0);
+          const tot = ds.data.reduce((a,b) => a+b, 0); if (!tot) return;
+          ctx2.save();
+          meta.data.forEach((arc, i) => {
+            const val = ds.data[i]; if (!val) return;
+            const pct = ((val/tot)*100).toFixed(1);
+            const lbl = chart.data.labels[i]; if (!lbl) return;
+            const ang = (arc.startAngle + arc.endAngle) / 2;
+            const midR = (arc.innerRadius + arc.outerRadius) / 2;
+            const cx = arc.x + Math.cos(ang) * midR;
+            const cy = arc.y + Math.sin(ang) * midR;
+            const outerR = arc.outerRadius + 20;
+            const lx = arc.x + Math.cos(ang) * outerR;
+            const ly = arc.y + Math.sin(ang) * outerR;
+            ctx2.beginPath(); ctx2.moveTo(cx, cy); ctx2.lineTo(lx, ly);
+            ctx2.strokeStyle = 'rgba(200,200,200,0.4)'; ctx2.lineWidth = 1; ctx2.stroke();
+            ctx2.font = 'bold 11px Inter,sans-serif';
+            ctx2.fillStyle = getLegendColor();
+            ctx2.textAlign = Math.cos(ang) >= 0 ? 'left' : 'right';
+            ctx2.fillText(`${lbl}: ${pct}%`, lx + (Math.cos(ang) >= 0 ? 5 : -5), ly + 4);
+          });
+          ctx2.restore();
+        }
+      }]
+    });
+  }
+
+  charts.cargaTrasera = crearDoughnutSubfamilia('graficoCargaTrasera', 'Carga Trasera');
+  charts.cargaLateral = crearDoughnutSubfamilia('graficoCargaLateral', 'Carga Lateral');
+
   charts.evolucion=new Chart(document.getElementById('graficoEvolucion').getContext('2d'),{
     type:'line', data:{labels:[],datasets:[]},
     options:{
@@ -457,6 +525,39 @@ function actualizarGraficos(){
     charts.descripcion.data.datasets[0].backgroundColor=labelsD.map((l,i)=>fvD&&l!==fvD?colsD[i]+'55':colsD[i]);
     charts.descripcion.options.plugins.legend.labels.color=getLegendColor();
     charts.descripcion.update();
+  }
+
+  // ── Subfamilias Carga Trasera ──
+  if (charts.cargaTrasera) {
+    const trasera = datos.filter(d => d['FAMILIA'] === 'CARGA_TRASERA');
+    const totalTrasera = trasera.length;
+    const cntT = {};
+    trasera.forEach(d => {
+      const sub = getSubfamiliaTrasera(d['VHLO']);
+      if (sub) cntT[sub] = (cntT[sub]||0) + 1;
+    });
+    const labT = Object.keys(cntT), valT = Object.values(cntT), colT = genColores(labT.length);
+    charts.cargaTrasera.data.labels = labT;
+    charts.cargaTrasera.data.datasets[0].data = valT;
+    charts.cargaTrasera.data.datasets[0].backgroundColor = colT;
+    charts.cargaTrasera.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
+    charts.cargaTrasera.update();
+  }
+
+  // ── Subfamilias Carga Lateral ──
+  if (charts.cargaLateral) {
+    const lateral = datos.filter(d => d['FAMILIA'] === 'CARGA_LATERAL');
+    const cntL = {};
+    lateral.forEach(d => {
+      const sub = getSubfamiliaLateral(d['VHLO']);
+      if (sub) cntL[sub] = (cntL[sub]||0) + 1;
+    });
+    const labL = Object.keys(cntL), valL = Object.values(cntL), colL = genColores(labL.length);
+    charts.cargaLateral.data.labels = labL;
+    charts.cargaLateral.data.datasets[0].data = valL;
+    charts.cargaLateral.data.datasets[0].backgroundColor = colL;
+    charts.cargaLateral.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
+    charts.cargaLateral.update();
   }
 
   const ctT={};
