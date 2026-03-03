@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>U.C.T. - PARQUE CENTRAL - DASHBOARDS</title>
+<title>U.C.T. - PARQUE CENTRAL - DASHBOARD</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -16,7 +16,7 @@
 <body>
 
 <div class="header">
-  <h1>⚡Unidad Control Tráfico - Parque Central</h1>
+  <h1>⚡ Control Tráfico</h1>
   <button id="btnAtras" disabled>◀ Atrás</button>
   <button id="btnAdelante" disabled>Adelante ▶</button>
   <button id="btnLimpiar">✕ Limpiar filtros</button>
@@ -94,6 +94,17 @@
   </div>
 
   <div class="chart-cell wide">
+    <div class="chart-panel" id="panel-descripcion">
+      <div class="panel-header">
+        <span class="panel-title">Ranking Descripción Avería</span>
+        <button class="btn-filtro-panel" data-campo="_DESCRIPCION_NORM">⊟</button>
+      </div>
+      <canvas id="graficoDescripcion"></canvas>
+      <div class="resize-handle" data-panel="panel-descripcion"></div>
+    </div>
+  </div>
+
+  <div class="chart-cell wide">
     <div class="chart-panel" id="panel-evolucion">
       <div class="panel-header">
         <span class="panel-title">Evolución mensual por familia</span>
@@ -108,6 +119,7 @@
 
 <div style="margin-bottom:8px;">
   <button id="btnColumnas">☰ Columnas visibles</button>
+  <button id="btnAleatorio">🔀 Orden aleatorio</button>
 </div>
 <table id="tablaAverias" class="display" width="100%"></table>
 
