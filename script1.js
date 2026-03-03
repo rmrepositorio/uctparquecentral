@@ -540,24 +540,8 @@ function iniciarResizeAltura(){
 
   document.addEventListener('mousemove', e=>{
     if(!panel) return;
-    if(dir==='s'||dir==='se'){
-      panel.style.height = Math.max(150, startH+(e.clientY-startY))+'px';
-    }
-    if(dir==='e'||dir==='se'){
-      // Resize horizontal: ajustar flex-basis de este panel y el hermano en la misma fila
-      const row = panel.closest('.chart-row');
-      if(!row || panel.classList.contains('wide')) return;
-      const rowW = row.getBoundingClientRect().width;
-      const panels = [...row.querySelectorAll('.chart-panel')];
-      if(panels.length < 2) return;
-      const delta = e.clientX - startX;
-      const newW = Math.min(rowW - 214, Math.max(200, startW + delta));
-      const sibW = rowW - newW - 14;
-      // Aplicar flex-basis para que cada panel ocupe exactamente su ancho
-      panel.style.flex = `0 0 ${newW}px`;
-      const sib = panels.find(p => p !== panel);
-      if(sib) sib.style.flex = `0 0 ${sibW}px`;
-    }
+    if(dir==='s'||dir==='se') panel.style.height = Math.max(150, startH+(e.clientY-startY))+'px';
+    if(dir==='e'||dir==='se') panel.style.width  = Math.max(200, startW+(e.clientX-startX))+'px';
   });
 
   document.addEventListener('mouseup', ()=>{
