@@ -63,6 +63,7 @@ input[type="date"]:focus{outline:none;border-color:var(--accent);}
 /* Canvas ocupa todo el panel menos header y handle */
 .chart-panel canvas{width:100%!important;height:calc(100% - 30px)!important;display:block;}
 
+
 /* ── Handle de altura — DENTRO del panel, en el fondo ── */
 .resize-handle{
   position:absolute;bottom:0;left:0;right:0;height:14px;
@@ -140,3 +141,40 @@ th:hover .col-grip{opacity:0.6;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+/* ── Tablas subfamilia ── */
+.subfam-table-wrap{
+  flex:1;background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+}
+.subfam-table-title{
+  font-family:'Rajdhani',sans-serif;font-size:.88em;font-weight:700;
+  color:var(--accent);text-transform:uppercase;letter-spacing:1px;
+  padding:12px 16px;border-bottom:2px solid var(--accent);
+  background:var(--bg3);
+}
+.subfam-table{width:100%;border-collapse:collapse;font-size:.85em;}
+.subfam-table th{
+  background:var(--bg3);color:var(--text-muted);
+  padding:10px 16px;text-align:left;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.95em;
+  letter-spacing:.5px;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+.subfam-table th:not(:first-child){text-align:right;}
+.subfam-table td{
+  padding:11px 16px;border-bottom:1px solid var(--border);
+  color:var(--text);font-size:1em;
+}
+.subfam-table td:not(:first-child){text-align:right;}
+.subfam-table tr:last-child td{border-bottom:none;}
+.subfam-table tbody tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+.subfam-table tbody tr:hover td{background:var(--bg3);}
+.subfam-table .media{
+  font-family:'Rajdhani',sans-serif;font-size:1.25em;
+  font-weight:700;color:var(--accent);
+}
+.subfam-table .color-dot{
+  display:inline-block;width:10px;height:10px;
+  border-radius:50%;margin-right:8px;vertical-align:middle;
+}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PARQUE CENTRAL - Dashboard - UCT</title>
+<title>Parque Central - Dashboard Control Tráfico</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -120,6 +120,23 @@
       </div>
       <canvas id="graficoCargaLateral"></canvas>
       <div class="resize-handle" data-panel="panel-carga-lateral"></div>
+    </div>
+  </div>
+
+  <div class="chart-row" id="row-5b" style="gap:14px;">
+    <div class="subfam-table-wrap">
+      <div class="subfam-table-title">📊 Media incidencias/vehículo — Carga Trasera</div>
+      <table class="subfam-table" id="tabla-trasera">
+        <thead><tr><th>Subfamilia</th><th>Incidencias</th><th>Vehículos</th><th>Media</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="subfam-table-wrap">
+      <div class="subfam-table-title">📊 Media incidencias/vehículo — Carga Lateral</div>
+      <table class="subfam-table" id="tabla-lateral">
+        <thead><tr><th>Subfamilia</th><th>Incidencias</th><th>Vehículos</th><th>Media</th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
   </div>
 

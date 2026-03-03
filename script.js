@@ -2,7 +2,9 @@
 const PALETA = ['#00d4aa','#7c6fe0','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#f78c6b','#88d498','#c77dff','#48cae4','#f4a261','#e76f51','#2ec4b6','#e9c46a','#a8dadc','#457b9d','#e63946','#2a9d8f','#f3722c'];
 
 // ── Subfamilias de vehículos ──
-function getSubfamiliaTrasera(vhlo) {
+function getSubfamiliaTrasera(vhlo, familia) {
+  // Minicompactadores por familia
+  if (familia && familia.toUpperCase().includes('MINICOMPACTADOR')) return 'MINICOMPACTADORES';
   const n = parseInt(vhlo);
   if (isNaN(n)) return null;
   if (n === 140 || n === 146) return 'MEDIANOS';
@@ -529,12 +531,15 @@ function actualizarGraficos(){
 
   // ── Subfamilias Carga Trasera ──
   if (charts.cargaTrasera) {
-    const trasera = datos.filter(d => d['FAMILIA'] === 'CARGA_TRASERA');
-    const totalTrasera = trasera.length;
-    const cntT = {};
+    const trasera = datos.filter(d => d['FAMILIA'] === 'CARGA_TRASERA' || (d['FAMILIA']||'').toUpperCase().includes('MINICOMPACTADOR'));
+    // incidencias y vehículos únicos por subfamilia
+    const cntT = {}, vhlosT = {};
     trasera.forEach(d => {
-      const sub = getSubfamiliaTrasera(d['VHLO']);
-      if (sub) cntT[sub] = (cntT[sub]||0) + 1;
+      const sub = getSubfamiliaTrasera(d['VHLO'], d['FAMILIA']);
+      if (!sub) return;
+      cntT[sub] = (cntT[sub]||0) + 1;
+      if (!vhlosT[sub]) vhlosT[sub] = new Set();
+      vhlosT[sub].add(d['VHLO']);
     });
     const labT = Object.keys(cntT), valT = Object.values(cntT), colT = genColores(labT.length);
     charts.cargaTrasera.data.labels = labT;
@@ -542,15 +547,32 @@ function actualizarGraficos(){
     charts.cargaTrasera.data.datasets[0].backgroundColor = colT;
     charts.cargaTrasera.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaTrasera.update();
+    // Tabla resumen
+    const tbT = document.querySelector('#tabla-trasera tbody');
+    if (tbT) {
+      tbT.innerHTML = labT.map((sub, i) => {
+        const nvh = vhlosT[sub] ? vhlosT[sub].size : 1;
+        const media = (cntT[sub] / nvh).toFixed(1);
+        return `<tr>
+          <td><span class="color-dot" style="background:${colT[i]}"></span>${sub}</td>
+          <td>${cntT[sub]}</td>
+          <td>${nvh}</td>
+          <td class="media">${media}</td>
+        </tr>`;
+      }).join('');
+    }
   }
 
   // ── Subfamilias Carga Lateral ──
   if (charts.cargaLateral) {
     const lateral = datos.filter(d => d['FAMILIA'] === 'CARGA_LATERAL');
-    const cntL = {};
+    const cntL = {}, vhlosL = {};
     lateral.forEach(d => {
       const sub = getSubfamiliaLateral(d['VHLO']);
-      if (sub) cntL[sub] = (cntL[sub]||0) + 1;
+      if (!sub) return;
+      cntL[sub] = (cntL[sub]||0) + 1;
+      if (!vhlosL[sub]) vhlosL[sub] = new Set();
+      vhlosL[sub].add(d['VHLO']);
     });
     const labL = Object.keys(cntL), valL = Object.values(cntL), colL = genColores(labL.length);
     charts.cargaLateral.data.labels = labL;
@@ -558,6 +580,20 @@ function actualizarGraficos(){
     charts.cargaLateral.data.datasets[0].backgroundColor = colL;
     charts.cargaLateral.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaLateral.update();
+    // Tabla resumen
+    const tbL = document.querySelector('#tabla-lateral tbody');
+    if (tbL) {
+      tbL.innerHTML = labL.map((sub, i) => {
+        const nvh = vhlosL[sub] ? vhlosL[sub].size : 1;
+        const media = (cntL[sub] / nvh).toFixed(1);
+        return `<tr>
+          <td><span class="color-dot" style="background:${colL[i]}"></span>${sub}</td>
+          <td>${cntL[sub]}</td>
+          <td>${nvh}</td>
+          <td class="media">${media}</td>
+        </tr>`;
+      }).join('');
+    }
   }
 
   const ctT={};
