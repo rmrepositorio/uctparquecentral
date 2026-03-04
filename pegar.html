@@ -134,18 +134,28 @@ table.ptable tr:hover td{background:var(--bg3);}
 
   <!-- PASO 1 -->
   <div id="panel1">
-    <div class="paste-zone" id="pasteZone">
-      <div class="paste-hint" id="pasteHint">
+    <div class="paste-zone" id="pasteZone" onclick="document.getElementById('pasteArea').focus()">
+      <div class="paste-hint">
         <span class="paste-hint-icon">📋</span>
         <h2>Pega los datos de Excel aquí</h2>
         <p>Selecciona las celdas en Excel (incluyendo la fila de cabecera) y pulsa</p>
         <span class="shortcut">Ctrl + V</span>
-        <p style="margin-top:12px;font-size:.8em;">La página debe estar activa (haz clic aquí primero)</p>
+      </div>
+      <textarea
+        id="pasteArea"
+        placeholder="Haz clic aquí y luego Ctrl+V..."
+        style="
+          width:100%;min-height:120px;resize:vertical;
+          background:var(--bg3);color:var(--text);
+          border:none;border-top:1px solid var(--border);
+          padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:.78em;
+          outline:none;display:block;
+        "
+      ></textarea>
+      <div style="padding:10px 16px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="procesarDesdeTextarea()">Procesar datos →</button>
       </div>
     </div>
-
-    <!-- Captura de pegado global -->
-    <textarea id="pasteCapture" tabindex="-1" aria-hidden="true"></textarea>
   </div>
 
   <!-- PASO 2 -->
@@ -219,18 +229,20 @@ const CAMPOS = ['FAMILIA','VHLO','CONDUCTOR','FAMILIA AVERIA','DEFICIENCIAS DETE
 
 let datosPegados = [], datosJson = [], datosFinal = [], modo = 'merge';
 
-// ── Capturar Ctrl+V en cualquier parte de la página ──
-document.addEventListener('paste', e => {
-  if (document.getElementById('panel1').classList.contains('hidden')) return;
-  const txt = e.clipboardData.getData('text/plain');
-  if (txt) procesarTexto(txt);
+// ── Auto-procesar al pegar en el textarea ──
+document.getElementById('pasteArea').addEventListener('paste', e => {
+  // Pequeño delay para que el textarea tenga el contenido
+  setTimeout(() => {
+    const txt = document.getElementById('pasteArea').value;
+    if (txt.trim()) procesarTexto(txt);
+  }, 50);
 });
 
-// Click en zona de pegado para dar foco
-document.getElementById('pasteZone').addEventListener('click', () => {
-  document.getElementById('pasteZone').classList.add('focusing');
-  setTimeout(() => document.getElementById('pasteZone').classList.remove('focusing'), 300);
-});
+function procesarDesdeTextarea() {
+  const txt = document.getElementById('pasteArea').value;
+  if (!txt.trim()) { alert('Primero pega los datos copiados de Excel (Ctrl+V dentro del área de texto)'); return; }
+  procesarTexto(txt);
+}
 
 function procesarTexto(txt) {
   const lineas = txt.split('\n').map(l => l.trimEnd()).filter(l => l.trim());
