@@ -17,6 +17,7 @@ function getSubfamiliaLateral(vhlo) {
   const n = parseInt(vhlo);
   if (isNaN(n)) return null;
   if (n >= 1100 && n <= 1121) return 'FARID ANTIGUOS';
+  if (n >= 1121 && n <= 1124) return 'AMS';
   if (n >= 1135 && n <= 1138) return 'FARID NUEVOS';
   if (n >= 1130 && n <= 1134) return 'OMB';
   if (n >= 3100 && n <= 3123) return 'WASTERRENT';
