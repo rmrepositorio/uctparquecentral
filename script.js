@@ -10,6 +10,7 @@ function getSubfamiliaTrasera(vhlo, familia) {
   if (n === 140 || n === 146) return 'MEDIANOS';
   if (n >= 142 && n <= 183) return '2 EJES';
   if (n >= 1170 && n <= 1172) return 'ECONIC ELECTRICOS'
+  if (n >= 1173 && n <= 1179) return 'VOLVO'
   return null;
 }
 
