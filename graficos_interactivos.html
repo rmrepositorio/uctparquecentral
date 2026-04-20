@@ -51,7 +51,7 @@
     <script>
         // Cargar datos desde el JSON
         let datos;
-        fetch('resumen_full.json')
+        fetch('https://raw.githubusercontent.com/rmrepositorio/uctparquecentral/refs/heads/main/resumen_full.json')
             .then(response => response.json())
             .then(data => {{
                 datos = data;
