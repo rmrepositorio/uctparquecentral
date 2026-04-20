@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabla Dinámica - Parque Central</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table.dataTable {
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚗⚡ Tabla Dinámica de Averías</h1>
+    </div>
+    <div>
+        <table id="tablaAverias" class="display" style="width:100%"></table>
+    </div>
+    <script>
+        // Cargar datos desde el JSON
+        fetch('resumen_full.json')
+            .then(response => response.json())
+            .then(data => {{
+                const tabla = $('#tablaAverias').DataTable({{
+                    data: data,
+                    columns: [
+                        {{ title: 'FAMILIA', data: 'FAMILIA' }},
+                        {{ title: 'VHLO', data: 'VHLO' }},
+                        {{ title: 'CONDUCTOR', data: 'CONDUCTOR' }},
+                        {{ title: 'FAMILIA AVERIA', data: 'FAMILIA AVERIA' }},
+                        {{ title: 'DEFICIENCIAS DETECTADAS', data: 'DEFICIENCIAS DETECTADAS' }},
+                        {{ title: 'DESCRIPCION AVERIA', data: 'DESCRIPCION AVERIA' }},
+                        {{ title: 'FOTO', data: 'FOTO' }},
+                        {{ title: 'FECHA AVISO', data: 'FECHA AVISO' }},
+                        {{ title: 'HORA', data: 'HORA' }},
+                        {{ title: 'TURNO', data: 'TURNO' }},
+                        {{ title: 'Nº AVISO', data: 'Nº AVISO' }},
+                        {{ title: 'AVISO ANTIGUO?', data: 'AVISO ANTIGUO?' }},
+                        {{ title: 'ORIGEN AVISO', data: 'ORIGEN AVISO' }},
+                        {{ title: 'TIPO ORDEN', data: 'TIPO ORDEN' }}
+                    ],
+                    colReorder: true,
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ]
+                });
+            }});
+    </script>
+</body>
+</html>

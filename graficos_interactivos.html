@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos Interactivos - Parque Central</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .chart-container {{
+            width: 80%;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: white;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Gráficos Interactivos de Averías</h1>
+    </div>
+    
+    <div class="chart-container">
+        <h2>Averías por Familia de Vehículo</h2>
+        <canvas id="barrasFamilia"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <h2>Distribución de Averías por Tipo</h2>
+        <canvas id="pastelTipo"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <h2>Tendencia de Averías por Fecha</h2>
+        <canvas id="lineasFecha"></canvas>
+    </div>
+    
+    <script>
+        // Cargar datos desde el JSON
+        let datos;
+        fetch('resumen_full.json')
+            .then(response => response.json())
+            .then(data => {{
+                datos = data;
+                actualizarGraficos(datos);
+            }});
+
+        // Función para actualizar gráficos según los datos filtrados
+        function actualizarGraficos(data) {{
+            // Procesar datos para gráficos
+            const familias = Array.from(new Set(data.map(item => item.FAMILIA)));
+            const averiasPorFamilia = familias.map(familia => {{
+                return data.filter(item => item.FAMILIA === familia).length;
+            }});
+
+            const tiposAveria = Array.from(new Set(data.map(item => item['FAMILIA AVERIA'])));
+            const averiasPorTipo = tiposAveria.map(tipo => {{
+                return data.filter(item => item['FAMILIA AVERIA'] === tipo).length;
+            }});
+
+            // Agrupar por fecha (solo día)
+            const fechas = Array.from(new Set(data.map(item => item['FECHA AVISO'])));
+            const averiasPorFecha = fechas.map(fecha => {{
+                return data.filter(item => item['FECHA AVISO'] === fecha).length;
+            }});
+
+            // Gráfico de Barras: Averías por Familia
+            const ctxBarras = document.getElementById('barrasFamilia').getContext('2d');
+            new Chart(ctxBarras, {{
+                type: 'bar',
+                data: {{
+                    labels: familias,
+                    datasets: [{{
+                        label: 'Número de Averías',
+                        data: averiasPorFamilia,
+                        backgroundColor: ['#00d4aa', '#7c6fe0', '#ff6b6b', '#ffd166', '#06d6a0'],
+                        borderWidth: 1
+                    }}]
+                }},
+                options: {{
+                    scales: {{
+                        y: {{
+                            beginAtZero: true
+                        }}
+                    }}
+                }}
+            }});
+
+            // Gráfico de Pastel: Distribución de Averías por Tipo
+            const ctxPastel = document.getElementById('pastelTipo').getContext('2d');
+            new Chart(ctxPastel, {{
+                type: 'pie',
+                data: {{
+                    labels: tiposAveria,
+                    datasets: [{{
+                        label: 'Número de Averías',
+                        data: averiasPorTipo,
+                        backgroundColor: ['#118ab2', '#ef476f', '#f78c6b', '#88d498', '#c77dff'],
+                        borderWidth: 1
+                    }}]
+                }}
+            }});
+
+            // Gráfico de Líneas: Tendencia de Averías por Fecha
+            const ctxLineas = document.getElementById('lineasFecha').getContext('2d');
+            new Chart(ctxLineas, {{
+                type: 'line',
+                data: {{
+                    labels: fechas,
+                    datasets: [{{
+                        label: 'Número de Averías',
+                        data: averiasPorFecha,
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.2)',
+                        borderWidth: 2,
+                        fill: true
+                    }}]
+                }},
+                options: {{
+                    scales: {{
+                        y: {{
+                            beginAtZero: true
+                        }}
+                    }}
+                }}
+            }});
+        }}
+    </script>
+</body>
+</html>
