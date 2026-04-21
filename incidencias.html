@@ -109,7 +109,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;}
 thead th{background:var(--bg3);font-family:'Syne',sans-serif;font-weight:600;font-size:.72em;
   text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:10px 14px;
   border-bottom:2px solid var(--border2);white-space:nowrap;cursor:pointer;user-select:none;
-  position:sticky;top:56px;transition:color .2s;}
+  position:sticky;top:0;transition:color .2s;}
 thead th:hover{color:var(--accent);}
 thead th.sorted-asc::after{content:' ▲';color:var(--accent);font-size:.8em;}
 thead th.sorted-desc::after{content:' ▼';color:var(--accent);font-size:.8em;}
@@ -169,7 +169,7 @@ tbody tr:first-child td{padding-top:14px;}
 <body>
 
 <div class="topbar">
-  <a href="index.html" class="topbar-logo">🚗U.C.T. PARQUE CENTRAL</a>
+  <a href="index.html" class="topbar-logo">🚗U.C.T. PARQUE CENTRAL - LISTADO DE AVISOS</a>
   <span class="topbar-sep">›</span>
   <span class="topbar-title">Incidencias</span>
   <div class="topbar-right">
@@ -581,6 +581,21 @@ function limpiarFiltros() {
 }
 
 document.getElementById('busqueda').addEventListener('input', aplicarFiltros);
+
+// Calcular offset del header sticky dinámicamente
+function ajustarStickyHeader() {
+  const topbar = document.querySelector('.topbar');
+  const filtros = document.querySelector('.filtros-wrap');
+  const tags = document.querySelector('.active-tags');
+  const offset = (topbar ? topbar.offsetHeight : 0)
+               + (filtros ? filtros.offsetHeight : 0)
+               + (tags && tags.children.length ? tags.offsetHeight + 4 : 0);
+  document.querySelectorAll('thead th').forEach(th => th.style.top = offset + 'px');
+}
+// Llamar después de render y al hacer scroll/resize
+const _renderTablaOrig = renderTabla;
+function renderTabla() { _renderTablaOrig(); setTimeout(ajustarStickyHeader, 0); }
+window.addEventListener('resize', ajustarStickyHeader);
 document.getElementById('filtFechaIni').addEventListener('input', aplicarFiltros);
 document.getElementById('filtFechaFin').addEventListener('input', aplicarFiltros);
 </script>
