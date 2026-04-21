@@ -409,11 +409,11 @@ fetch('resumen_full.json')
       poblarDropdown(def.id, vals);
     });
 
-    // Fechas
-    const fechas = datos.filter(d => d._fecha && !isNaN(d._fecha)).map(d => d._fecha);
+    // Fechas — usar reduce para evitar stack overflow con arrays grandes
+    const fechas = datos.filter(d => d._fecha && !isNaN(d._fecha)).map(d => d._fecha.getTime());
     if (fechas.length) {
-      const minF = new Date(Math.min(...fechas));
-      const maxF = new Date(Math.max(...fechas));
+      const minF = new Date(fechas.reduce((a,b) => a<b?a:b));
+      const maxF = new Date(fechas.reduce((a,b) => a>b?a:b));
       if (!isNaN(minF)) document.getElementById('filtFechaIni').value = fmtDateInput(minF);
       if (!isNaN(maxF)) document.getElementById('filtFechaFin').value = fmtDateInput(maxF);
     }
@@ -575,10 +575,10 @@ function limpiarFiltros() {
     actualizarBtn(def.id);
   });
   document.getElementById('busqueda').value = '';
-  const fechas = datos.filter(d=>d._fecha).map(d=>d._fecha);
+  const fechas = datos.filter(d=>d._fecha&&!isNaN(d._fecha)).map(d=>d._fecha.getTime());
   if (fechas.length) {
-    document.getElementById('filtFechaIni').value = fmtDateInput(new Date(Math.min(...fechas)));
-    document.getElementById('filtFechaFin').value = fmtDateInput(new Date(Math.max(...fechas)));
+    document.getElementById('filtFechaIni').value = fmtDateInput(new Date(fechas.reduce((a,b)=>a<b?a:b)));
+    document.getElementById('filtFechaFin').value = fmtDateInput(new Date(fechas.reduce((a,b)=>a>b?a:b)));
   }
   aplicarFiltros();
 }
