@@ -588,12 +588,14 @@ document.getElementById('busqueda').addEventListener('input', aplicarFiltros);
 
 // Calcular offset del header sticky dinámicamente
 function ajustarStickyHeader() {
-  const topbar = document.querySelector('.topbar');
-  const filtros = document.querySelector('.filtros-wrap');
-  const tags = document.querySelector('.active-tags');
-  const offset = (topbar ? topbar.offsetHeight : 0)
-               + (filtros ? filtros.offsetHeight : 0)
-               + (tags && tags.children.length ? tags.offsetHeight + 4 : 0);
+  // Calcular offset sumando alturas reales de elementos fijos/sticky encima de la tabla
+  let offset = 0;
+  ['.topbar', '.filtros-wrap', '.active-tags', '.results-bar'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) offset += el.offsetHeight;
+  });
+  // Añadir padding del table-container
+  offset += 28;
   document.querySelectorAll('thead th').forEach(th => th.style.top = offset + 'px');
 }
 window.addEventListener('resize', ajustarStickyHeader);
