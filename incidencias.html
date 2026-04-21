@@ -506,6 +506,7 @@ function renderTabla() {
   html += `</tbody></table>`;
   wrap.innerHTML = html;
   renderPaginacion();
+  setTimeout(ajustarStickyHeader, 0);
 }
 
 function toggleDetalle(idx) { expandedRow = expandedRow===idx ? null : idx; renderTabla(); }
@@ -595,9 +596,6 @@ function ajustarStickyHeader() {
                + (tags && tags.children.length ? tags.offsetHeight + 4 : 0);
   document.querySelectorAll('thead th').forEach(th => th.style.top = offset + 'px');
 }
-// Llamar después de render y al hacer scroll/resize
-const _renderTablaOrig = renderTabla;
-function renderTabla() { _renderTablaOrig(); setTimeout(ajustarStickyHeader, 0); }
 window.addEventListener('resize', ajustarStickyHeader);
 document.getElementById('filtFechaIni').addEventListener('input', aplicarFiltros);
 document.getElementById('filtFechaFin').addEventListener('input', aplicarFiltros);
