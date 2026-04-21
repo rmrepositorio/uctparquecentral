@@ -410,10 +410,12 @@ fetch('resumen_full.json')
     });
 
     // Fechas
-    const fechas = datos.filter(d => d._fecha).map(d => d._fecha);
+    const fechas = datos.filter(d => d._fecha && !isNaN(d._fecha)).map(d => d._fecha);
     if (fechas.length) {
-      document.getElementById('filtFechaIni').value = fmtDateInput(new Date(Math.min(...fechas)));
-      document.getElementById('filtFechaFin').value = fmtDateInput(new Date(Math.max(...fechas)));
+      const minF = new Date(Math.min(...fechas));
+      const maxF = new Date(Math.max(...fechas));
+      if (!isNaN(minF)) document.getElementById('filtFechaIni').value = fmtDateInput(minF);
+      if (!isNaN(maxF)) document.getElementById('filtFechaFin').value = fmtDateInput(maxF);
     }
 
     aplicarFiltros();
