@@ -420,8 +420,9 @@ fetch('resumen_full.json')
 
     aplicarFiltros();
   })
-  .catch(() => {
-    document.getElementById('tableWrap').innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span>No se pudo cargar resumen_full.json</div>';
+  .catch(err => {
+    console.error('Error cargando JSON:', err);
+    document.getElementById('tableWrap').innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span>Error: ' + err.message + '</div>';
   });
 
 // ── Filtrar ──
