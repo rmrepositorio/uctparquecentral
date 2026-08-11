@@ -90,10 +90,11 @@ document.getElementById('btnLimpiar').addEventListener('click',()=>{
 function renderTags(){
   const cont=document.getElementById('filtrosActivos');
   cont.innerHTML='';
+  const ETIQUETAS={'_DESCRIPCION_NORM':'Descripción','_SUBFAM_TRASERA':'Subfamilia Trasera','_SUBFAM_LATERAL':'Subfamilia Lateral'};
   Object.entries(filtrosActivos).forEach(([k,v])=>{
     if(!v) return;
     const t=document.createElement('span'); t.className='filtro-tag';
-    t.textContent=`${k}: ${v}  ✕`;
+    t.textContent=`${ETIQUETAS[k]||k}: ${v}  ✕`;
     t.onclick=()=>{ delete filtrosActivos[k]; pushHistorial(); renderTags(); actualizarGraficos(); };
     cont.appendChild(t);
   });
@@ -302,7 +303,7 @@ function crearGraficos(){
   });
 
   // ── Subfamilias Carga Trasera ──
-  function crearDoughnutSubfamilia(canvasId, titulo) {
+  function crearDoughnutSubfamilia(canvasId, titulo, campoFiltro) {
     return new Chart(document.getElementById(canvasId).getContext('2d'), {
       type: 'doughnut',
       data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: modoOscuro ? '#0f0f1a' : '#f0f4ff' }] },
@@ -315,6 +316,13 @@ function crearGraficos(){
             const tot = ctx.dataset.data.reduce((a,b) => a+b, 0);
             return ` ${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
           }}}
+        },
+        onClick: (evt, elems) => {
+          if (!elems.length) return;
+          const val = evt.chart.data.labels[elems[0].index];
+          if (filtrosActivos[campoFiltro] === val) delete filtrosActivos[campoFiltro];
+          else filtrosActivos[campoFiltro] = val;
+          pushHistorial(); renderTags(); actualizarGraficos();
         }
       },
       plugins: [{
@@ -347,8 +355,8 @@ function crearGraficos(){
     });
   }
 
-  charts.cargaTrasera = crearDoughnutSubfamilia('graficoCargaTrasera', 'Carga Trasera');
-  charts.cargaLateral = crearDoughnutSubfamilia('graficoCargaLateral', 'Carga Lateral');
+  charts.cargaTrasera = crearDoughnutSubfamilia('graficoCargaTrasera', 'Carga Trasera', '_SUBFAM_TRASERA');
+  charts.cargaLateral = crearDoughnutSubfamilia('graficoCargaLateral', 'Carga Lateral', '_SUBFAM_LATERAL');
 
   charts.evolucion=new Chart(document.getElementById('graficoEvolucion').getContext('2d'),{
     type:'line', data:{labels:[],datasets:[]},
@@ -493,12 +501,16 @@ function actualizarGraficos(){
     if(!fi || !ff) return true; // sin rango = mostrar todo
     return cmpFecha(d.fechaJS,fi)>=0 && cmpFecha(d.fechaJS,ff)<=0;
   });
-  for(const k in filtrosActivos){ if(filtrosActivos[k] && k!=='_DESCRIPCION_NORM') datos=datos.filter(d=>d[k] && d[k].toString().trim().toUpperCase()===filtrosActivos[k].toString().trim().toUpperCase()); }
+  const CLAVES_ESPECIALES=['_DESCRIPCION_NORM','_SUBFAM_TRASERA','_SUBFAM_LATERAL'];
+  for(const k in filtrosActivos){ if(filtrosActivos[k] && !CLAVES_ESPECIALES.includes(k)) datos=datos.filter(d=>d[k] && d[k].toString().trim().toUpperCase()===filtrosActivos[k].toString().trim().toUpperCase()); }
   for(const k in exclusiones){ const ex=exclusiones[k]; if(ex.size) datos=datos.filter(d=>{ const v=d[k]?d[k].toString().trim().toUpperCase():''; return !ex.has(v); }); }
   // Excluir siempre registros sin vehículo
   datos=datos.filter(d=>d.VHLO && d.VHLO.toString().trim()!=="");
   // Filtro por descripción avería
   if(filtrosActivos['_DESCRIPCION_NORM']) datos=datos.filter(d=>getDescripcion(d)===filtrosActivos['_DESCRIPCION_NORM']);
+  // Filtro por subfamilia de carga trasera / lateral
+  if(filtrosActivos['_SUBFAM_TRASERA']) datos=datos.filter(d=>getSubfamiliaTrasera(d['VHLO'],d['FAMILIA'])===filtrosActivos['_SUBFAM_TRASERA']);
+  if(filtrosActivos['_SUBFAM_LATERAL']) datos=datos.filter(d=>getSubfamiliaLateral(d['VHLO'])===filtrosActivos['_SUBFAM_LATERAL']);
 
   [{key:'familia',campo:'FAMILIA AVERIA'},{key:'origen',campo:'ORIGEN AVISO'},{key:'familiaVeh',campo:'FAMILIA'},{key:'vhlo',campo:'VHLO'}]
   .forEach(({key,campo})=>{
@@ -545,9 +557,10 @@ function actualizarGraficos(){
       vhlosT[sub].add(d['VHLO']);
     });
     const labT = Object.keys(cntT), valT = Object.values(cntT), colT = genColores(labT.length);
+    const fvT = filtrosActivos['_SUBFAM_TRASERA'];
     charts.cargaTrasera.data.labels = labT;
     charts.cargaTrasera.data.datasets[0].data = valT;
-    charts.cargaTrasera.data.datasets[0].backgroundColor = colT;
+    charts.cargaTrasera.data.datasets[0].backgroundColor = labT.map((l,i)=>fvT&&l!==fvT?colT[i]+'55':colT[i]);
     charts.cargaTrasera.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaTrasera.update();
     // Tabla resumen
@@ -578,9 +591,10 @@ function actualizarGraficos(){
       vhlosL[sub].add(d['VHLO']);
     });
     const labL = Object.keys(cntL), valL = Object.values(cntL), colL = genColores(labL.length);
+    const fvL = filtrosActivos['_SUBFAM_LATERAL'];
     charts.cargaLateral.data.labels = labL;
     charts.cargaLateral.data.datasets[0].data = valL;
-    charts.cargaLateral.data.datasets[0].backgroundColor = colL;
+    charts.cargaLateral.data.datasets[0].backgroundColor = labL.map((l,i)=>fvL&&l!==fvL?colL[i]+'55':colL[i]);
     charts.cargaLateral.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaLateral.update();
     // Tabla resumen
