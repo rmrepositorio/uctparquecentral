@@ -26,6 +26,26 @@ function getSubfamiliaLateral(vhlo) {
 }
 function genColores(n){ return Array.from({length:n},(_,i)=>PALETA[i%PALETA.length]); }
 
+// Color fijo y único por subfamilia (trasera y lateral no comparten colores)
+const COLORES_SUBFAM = {
+  // Carga trasera
+  'MEDIANOS':          '#00d4aa',
+  '2 EJES':            '#7c6fe0',
+  'MINICOMPACTADORES': '#ff6b6b',
+  'ECONIC ELECTRICOS': '#ffd166',
+  'VOLVO':             '#118ab2',
+  // Carga lateral
+  'FARID ANTIGUOS':    '#c77dff',
+  'AMS':               '#48cae4',
+  'FARID NUEVOS':      '#f4a261',
+  'OMB':               '#2a9d8f',
+  'WASTERRENT':        '#e63946'
+};
+function colorSubfam(labels){
+  let extra = 0;
+  return labels.map(l => COLORES_SUBFAM[l] || PALETA[(extra++) % PALETA.length]);
+}
+
 // ── Estado ──
 let charts={}, filtrosActivos={}, exclusiones={}, modoOscuro=true, tablaDT;
 let historial=[], historialIdx=-1;
@@ -556,7 +576,7 @@ function actualizarGraficos(){
       if (!vhlosT[sub]) vhlosT[sub] = new Set();
       vhlosT[sub].add(d['VHLO']);
     });
-    const labT = Object.keys(cntT), valT = Object.values(cntT), colT = genColores(labT.length);
+    const labT = Object.keys(cntT), valT = Object.values(cntT), colT = colorSubfam(labT);
     const fvT = filtrosActivos['_SUBFAM_TRASERA'];
     charts.cargaTrasera.data.labels = labT;
     charts.cargaTrasera.data.datasets[0].data = valT;
@@ -590,7 +610,7 @@ function actualizarGraficos(){
       if (!vhlosL[sub]) vhlosL[sub] = new Set();
       vhlosL[sub].add(d['VHLO']);
     });
-    const labL = Object.keys(cntL), valL = Object.values(cntL), colL = genColores(labL.length);
+    const labL = Object.keys(cntL), valL = Object.values(cntL), colL = colorSubfam(labL);
     const fvL = filtrosActivos['_SUBFAM_LATERAL'];
     charts.cargaLateral.data.labels = labL;
     charts.cargaLateral.data.datasets[0].data = valL;
