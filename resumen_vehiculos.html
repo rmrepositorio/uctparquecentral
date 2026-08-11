@@ -65,6 +65,60 @@
 .cell-medium { color: #ffd166; font-weight: 600; }
 .cell-high { color: #ff6b6b; font-weight: 700; }
 
+/* Dropdowns filtros */
+.dropdown { position: relative; display: inline-block; }
+.dd-panel {
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+  width: 260px;
+  padding: 10px;
+  font-size: 12px;
+}
+.dd-panel.open { display: block; }
+.dd-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.dd-barra { display: flex; gap: 6px; margin-bottom: 8px; }
+.dd-barra button { flex: 1; font-size: 11px; padding: 4px 0; }
+.dd-search {
+  width: 100%;
+  background: var(--input-bg, var(--bg3));
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.dd-search:focus { outline: none; border-color: var(--accent); }
+.dd-list { max-height: 260px; overflow-y: auto; }
+.dd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+}
+.dd-row:hover { background: var(--bg3); }
+.dd-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
+.dd-count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+
 /* Link volver */
 .back-link {
   display: inline-flex;
@@ -91,6 +145,34 @@
 <div class="controls">
   <label>Fecha inicio: <input type="date" id="fechaInicio"></label>
   <label>Fecha fin: <input type="date" id="fechaFin"></label>
+
+  <div class="dropdown">
+    <button id="btnColumnas" type="button">▤ Columnas ▾</button>
+    <div class="dd-panel" id="panelColumnas">
+      <div class="dd-title">Columnas visibles</div>
+      <div class="dd-barra">
+        <button type="button" id="colTodas">Todas</button>
+        <button type="button" id="colNinguna">Ninguna</button>
+      </div>
+      <div class="dd-list" id="listaColumnas"></div>
+    </div>
+  </div>
+
+  <div class="dropdown">
+    <button id="btnVehiculos" type="button">🚛 Vehículos ▾</button>
+    <div class="dd-panel" id="panelVehiculos">
+      <div class="dd-title">Vehículos (VHLO) <span class="dd-count" id="contVehiculos"></span></div>
+      <input type="text" class="dd-search" id="buscarVehiculo" placeholder="Buscar vehículo...">
+      <div class="dd-barra">
+        <button type="button" id="vehTodos">Todos</button>
+        <button type="button" id="vehNinguno">Ninguno</button>
+      </div>
+      <div class="dd-list" id="listaVehiculos"></div>
+    </div>
+  </div>
+
+  <button id="btnAleatorio" type="button">🔀 Orden aleatorio</button>
+  <button id="btnResetOrden" type="button">↕ Orden por total</button>
 </div>
 
 <div class="stats-row">
@@ -122,6 +204,9 @@ let modoOscuro = true;
 let allData = [];
 let familias = [];
 let tablaDT = null;
+let todosVehiculos = [];          // lista completa de VHLO
+let vehiculosSel = new Set();     // VHLO seleccionados (vacío = todos)
+let ordenAleatorio = false;       // si la tabla está en modo aleatorio
 
 // Modo claro/oscuro
 document.getElementById('toggleModo').addEventListener('click', () => {
@@ -159,9 +244,20 @@ fetch('resumen_full.json')
     // Obtener familias únicas
     familias = [...new Set(allData.map(d => d['FAMILIA AVERIA']))].filter(f => f && f !== '****').sort();
 
+    // Lista completa de vehículos ordenada numéricamente
+    todosVehiculos = [...new Set(allData.map(d => d.VHLO))].filter(Boolean)
+      .sort((a, b) => {
+        const na = parseFloat(a), nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b);
+      });
+
     // Inicializar fechas con el rango de los datos
     inicializarFechas();
     initTable();
+    construirPanelColumnas();
+    construirPanelVehiculos();
+    initControles();
     updateTable();
   })
   .catch(e => console.error('Error cargando JSON:', e));
@@ -257,11 +353,19 @@ function updateTable() {
     resumen[vhlo].total++;
   });
 
-  const tableData = Object.values(resumen);
+  let tableData = Object.values(resumen);
+
+  // Filtrar por vehículos seleccionados (vacío = todos)
+  if (vehiculosSel.size > 0) {
+    tableData = tableData.filter(r => vehiculosSel.has(r.vehiculo));
+  }
+
+  // Averías correspondientes a los vehículos mostrados
+  const averiasMostradas = tableData.reduce((s, r) => s + r.total, 0);
 
   // Actualizar estadísticas
   document.getElementById('statVehiculos').textContent = tableData.length.toLocaleString('es-ES');
-  document.getElementById('statAverias').textContent = filtrados.length.toLocaleString('es-ES');
+  document.getElementById('statAverias').textContent = averiasMostradas.toLocaleString('es-ES');
   document.getElementById('statFamilias').textContent = familias.length;
 
   if (fi && ff) {
@@ -271,10 +375,126 @@ function updateTable() {
     document.getElementById('statDias').textContent = '0';
   }
 
+  // Modo aleatorio: barajar filas
+  if (ordenAleatorio) {
+    for (let i = tableData.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [tableData[i], tableData[j]] = [tableData[j], tableData[i]];
+    }
+  }
+
   // Actualizar DataTable
   tablaDT.clear();
   tablaDT.rows.add(tableData);
+  if (ordenAleatorio) tablaDT.order([]);
   tablaDT.draw();
+}
+
+// ── Panel de columnas visibles ──
+function construirPanelColumnas() {
+  const lista = document.getElementById('listaColumnas');
+  const cols = ['Vehículo', 'Total', ...familias];
+  lista.innerHTML = '';
+  cols.forEach((titulo, idx) => {
+    const row = document.createElement('label');
+    row.className = 'dd-row';
+    row.innerHTML = `<input type="checkbox" data-col="${idx}" checked><span>${titulo}</span>`;
+    lista.appendChild(row);
+  });
+  lista.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      tablaDT.column(parseInt(cb.dataset.col)).visible(cb.checked);
+    });
+  });
+  document.getElementById('colTodas').addEventListener('click', () => setColumnas(true));
+  document.getElementById('colNinguna').addEventListener('click', () => setColumnas(false));
+}
+function setColumnas(visible) {
+  document.querySelectorAll('#listaColumnas input[type=checkbox]').forEach(cb => {
+    cb.checked = visible;
+    tablaDT.column(parseInt(cb.dataset.col)).visible(visible);
+  });
+}
+
+// ── Panel de vehículos (VHLO) ──
+function construirPanelVehiculos() {
+  const lista = document.getElementById('listaVehiculos');
+  lista.innerHTML = '';
+  todosVehiculos.forEach(v => {
+    const row = document.createElement('label');
+    row.className = 'dd-row';
+    row.dataset.veh = v;
+    row.innerHTML = `<input type="checkbox" value="${v}"><span>${v}</span>`;
+    lista.appendChild(row);
+  });
+  lista.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) vehiculosSel.add(cb.value);
+      else vehiculosSel.delete(cb.value);
+      actualizarContadorVeh();
+      updateTable();
+    });
+  });
+  document.getElementById('vehTodos').addEventListener('click', () => setVehiculos(true));
+  document.getElementById('vehNinguno').addEventListener('click', () => setVehiculos(false));
+  document.getElementById('buscarVehiculo').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    lista.querySelectorAll('.dd-row').forEach(r => {
+      r.style.display = r.dataset.veh.toLowerCase().includes(q) ? 'flex' : 'none';
+    });
+  });
+  actualizarContadorVeh();
+}
+function setVehiculos(seleccionar) {
+  // Solo afecta a los visibles según el buscador
+  document.querySelectorAll('#listaVehiculos .dd-row').forEach(r => {
+    if (r.style.display === 'none') return;
+    const cb = r.querySelector('input');
+    cb.checked = seleccionar;
+    if (seleccionar) vehiculosSel.add(cb.value);
+    else vehiculosSel.delete(cb.value);
+  });
+  actualizarContadorVeh();
+  updateTable();
+}
+function actualizarContadorVeh() {
+  const cont = document.getElementById('contVehiculos');
+  cont.textContent = vehiculosSel.size === 0
+    ? `(todos: ${todosVehiculos.length})`
+    : `(${vehiculosSel.size} sel.)`;
+}
+
+// ── Controles: aleatorio, reset orden y apertura de paneles ──
+function initControles() {
+  document.getElementById('btnAleatorio').addEventListener('click', () => {
+    ordenAleatorio = true;
+    updateTable();
+  });
+  document.getElementById('btnResetOrden').addEventListener('click', () => {
+    ordenAleatorio = false;
+    tablaDT.order([1, 'desc']);
+    updateTable();
+  });
+
+  // Abrir/cerrar desplegables
+  const toggles = [
+    ['btnColumnas', 'panelColumnas'],
+    ['btnVehiculos', 'panelVehiculos']
+  ];
+  toggles.forEach(([btn, panel]) => {
+    document.getElementById(btn).addEventListener('click', e => {
+      e.stopPropagation();
+      const p = document.getElementById(panel);
+      const abierto = p.classList.contains('open');
+      document.querySelectorAll('.dd-panel').forEach(x => x.classList.remove('open'));
+      if (!abierto) p.classList.add('open');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown')) {
+      document.querySelectorAll('.dd-panel').forEach(x => x.classList.remove('open'));
+    }
+  });
 }
 </script>
 </body>
