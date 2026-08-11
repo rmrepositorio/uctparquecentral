@@ -25,7 +25,23 @@ function getSubfamiliaLateral(vhlo) {
   if (n >= 3100 && n <= 3123) return 'WASTERRENT';
   return null;
 }
-function genColores(n){ return Array.from({length:n},(_,i)=>PALETA[i%PALETA.length]); }
+function genColores(n){
+  return Array.from({length:n},(_,i)=>{
+    if(i<PALETA.length) return PALETA[i];
+    // Más elementos que la paleta: generar tonos distintos con ángulo áureo
+    const hue=(i*137.508)%360;
+    const sat=65+(i%2)*10;      // 65% / 75%
+    const light=55+(i%3)*7;     // 55% / 62% / 69%
+    return `hsl(${hue.toFixed(0)},${sat}%,${light}%)`;
+  });
+}
+
+// Devuelve una versión translúcida de un color hex o hsl
+function conAlpha(color){
+  if(color.startsWith('#')) return color+'22';
+  if(color.startsWith('hsl(')) return color.replace('hsl(','hsla(').replace(')',',0.13)');
+  return color;
+}
 
 // Color fijo y único por subfamilia (trasera y lateral no comparten colores)
 const COLORES_SUBFAM = {
@@ -655,7 +671,7 @@ function actualizarGraficos(){
   charts.evolucion.data.labels=lEv;
   charts.evolucion.data.datasets=fams.map((fam,i)=>({
     label:fam, data:lEv.map(l=>evol[l][fam]||0),
-    borderColor:cEv[i], backgroundColor:cEv[i]+'22', fill:false, tension:0.3, pointRadius:3
+    borderColor:cEv[i], backgroundColor:conAlpha(cEv[i]), fill:false, tension:0.3, pointRadius:3
   }));
   charts.evolucion.options.plugins.legend.labels.color=getLegendColor();
   charts.evolucion.update();
