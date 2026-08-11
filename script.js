@@ -4,10 +4,10 @@ const PALETA = ['#00d4aa','#7c6fe0','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef
 // ── Subfamilias de vehículos ──
 function getSubfamiliaTrasera(vhlo, familia) {
   // Minicompactadores por familia
-  //if (familia && familia.toUpperCase().includes('MINICOMPACTADOR')) return 'MINICOMPACTADORES';
+  if (familia && familia.toUpperCase().includes('MINICOMPACTADOR')) return 'MINICOMPACTADORES';
   const n = parseInt(vhlo);
   if (isNaN(n)) return null;
-if (n === 86 && n === 87 && n === 88 && n === 1081 && n === 1082 && n === 1083 && n === 1084 && n === 1085) return 'MINIDOMPACTADORES'; 
+//if (n === 86 && n === 87 && n === 88 && n === 1081 && n === 1082 && n === 1083 && n === 1084 && n === 1085) return 'MINIDOMPACTADORES'; 
   if (n === 140 || n === 146) return 'MEDIANOS';
   if (n >= 142 && n <= 184) return '2 EJES';
   if (n >= 1170 && n <= 1172) return 'ECONIC ELECTRICOS';
