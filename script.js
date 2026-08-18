@@ -1,72 +1,49 @@
 // ── Paleta ──
 const PALETA = ['#00d4aa','#7c6fe0','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#f78c6b','#88d498','#c77dff','#48cae4','#f4a261','#e76f51','#2ec4b6','#e9c46a','#a8dadc','#457b9d','#e63946','#2a9d8f','#f3722c'];
 
+// ── Mapeo TIPO ORDEN → Etiqueta ──
+// L02 = Accidente, L05 = Golpe/Mal Uso, TODO LO DEMÁS = Avería
+const MAPA_TIPO_ORDEN = { 'L02': 'Accidente', 'L05': 'Golpe / Mal Uso' };
+const ETIQUETA_AVERIA = 'Avería';
+function getEtiquetaTipoOrden(codigo) {
+  const cod = (codigo || '').toString().trim().toUpperCase();
+  if (!cod || cod === '****') return null;
+  return MAPA_TIPO_ORDEN[cod] || ETIQUETA_AVERIA;
+}
+// Mapeo inverso: etiqueta → códigos que la cumplen
+function getCodigosParaEtiqueta(etiqueta) {
+  if (etiqueta === 'Accidente') return ['L02'];
+  if (etiqueta === 'Golpe / Mal Uso') return ['L05'];
+  if (etiqueta === ETIQUETA_AVERIA) {
+    // Todo lo que NO sea L02 ni L05
+    return { modo: 'resto' };
+  }
+  return [];
+}
+
 // ── Subfamilias de vehículos ──
 function getSubfamiliaTrasera(vhlo, familia) {
-  // Minicompactadores por familia
   if (familia && familia.toUpperCase().includes('MINICOMPACTADOR')) return 'MINICOMPACTADORES';
   const n = parseInt(vhlo);
   if (isNaN(n)) return null;
-//if (n === 86 && n === 87 && n === 88 && n === 1081 && n === 1082 && n === 1083 && n === 1084 && n === 1085) return 'MINIDOMPACTADORES'; 
   if (n === 140 || n === 146) return 'MEDIANOS';
-  if (n >= 142 && n <= 184) return '2 EJES';
-  if (n >= 1170 && n <= 1172) return 'ECONIC ELECTRICOS';
-  if (n >= 1173 && n <= 1179) return 'VOLVO';
+  if (n >= 142 && n <= 183) return '2 EJES';
   return null;
 }
-
 function getSubfamiliaLateral(vhlo) {
   const n = parseInt(vhlo);
   if (isNaN(n)) return null;
   if (n >= 1100 && n <= 1121) return 'FARID ANTIGUOS';
-  if (n >= 1121 && n <= 1127) return 'AMS';
   if (n >= 1135 && n <= 1138) return 'FARID NUEVOS';
-  if (n >= 1130 && n <= 1134) return 'OMB';
+  if (n >= 1130 && n <= 1334) return 'OMB';
   if (n >= 3100 && n <= 3123) return 'WASTERRENT';
   return null;
 }
-function genColores(n){
-  return Array.from({length:n},(_,i)=>{
-    if(i<PALETA.length) return PALETA[i];
-    // Más elementos que la paleta: generar tonos distintos con ángulo áureo
-    const hue=(i*137.508)%360;
-    const sat=65+(i%2)*10;      // 65% / 75%
-    const light=55+(i%3)*7;     // 55% / 62% / 69%
-    return `hsl(${hue.toFixed(0)},${sat}%,${light}%)`;
-  });
-}
-
-// Devuelve una versión translúcida de un color hex o hsl
-function conAlpha(color){
-  if(color.startsWith('#')) return color+'22';
-  if(color.startsWith('hsl(')) return color.replace('hsl(','hsla(').replace(')',',0.13)');
-  return color;
-}
-
-// Color fijo y único por subfamilia (trasera y lateral no comparten colores)
-const COLORES_SUBFAM = {
-  // Carga trasera
-  'MEDIANOS':          '#00d4aa',
-  '2 EJES':            '#7c6fe0',
-  'MINICOMPACTADORES': '#ff6b6b',
-  'ECONIC ELECTRICOS': '#ffd166',
-  'VOLVO':             '#118ab2',
-  // Carga lateral
-  'FARID ANTIGUOS':    '#c77dff',
-  'AMS':               '#48cae4',
-  'FARID NUEVOS':      '#f4a261',
-  'OMB':               '#2a9d8f',
-  'WASTERRENT':        '#e63946'
-};
-function colorSubfam(labels){
-  let extra = 0;
-  return labels.map(l => COLORES_SUBFAM[l] || PALETA[(extra++) % PALETA.length]);
-}
+function genColores(n){ return Array.from({length:n},(_,i)=>PALETA[i%PALETA.length]); }
 
 // ── Estado ──
 let charts={}, filtrosActivos={}, exclusiones={}, modoOscuro=true, tablaDT;
 let historial=[], historialIdx=-1;
-
 function getLegendColor(){ return modoOscuro?'#e0e0f0':'#1a1a2e'; }
 function getGridColor()  { return modoOscuro?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)'; }
 
@@ -127,11 +104,16 @@ document.getElementById('btnLimpiar').addEventListener('click',()=>{
 function renderTags(){
   const cont=document.getElementById('filtrosActivos');
   cont.innerHTML='';
-  const ETIQUETAS={'_DESCRIPCION_NORM':'Descripción','_SUBFAM_TRASERA':'Subfamilia Trasera','_SUBFAM_LATERAL':'Subfamilia Lateral'};
+  const etiquetasEspeciales = {
+    '_DESCRIPCION_NORM': 'Descripción',
+    '_TIPO_ORDEN_LABEL': 'Tipo Orden',
+    '_REINCIDENCIA': 'Recurrencia'
+  };
   Object.entries(filtrosActivos).forEach(([k,v])=>{
     if(!v) return;
     const t=document.createElement('span'); t.className='filtro-tag';
-    t.textContent=`${ETIQUETAS[k]||k}: ${v}  ✕`;
+    const nombre = etiquetasEspeciales[k] || k;
+    t.textContent=`${nombre}: ${v} ✕`;
     t.onclick=()=>{ delete filtrosActivos[k]; pushHistorial(); renderTags(); actualizarGraficos(); };
     cont.appendChild(t);
   });
@@ -170,7 +152,6 @@ function abrirMenuExcl(campo, valores, anchorEl){
   };
   menu.appendChild(btn); document.body.appendChild(menu);
   const r=anchorEl.getBoundingClientRect();
-  // Mantener dentro de la ventana
   requestAnimationFrame(()=>{
     const mW=menu.offsetWidth, mH=menu.offsetHeight;
     const top=(r.bottom+4+mH>window.innerHeight) ? Math.max(4,r.top-mH-4) : r.bottom+4;
@@ -192,7 +173,6 @@ function cerrarMenus(){
 fetch('resumen_full.json')
   .then(r=>r.json())
   .then(data=>{
-    // Normalizar campos de texto: trim + uppercase
     const CAMPOS_NORM=['FAMILIA AVERIA','FAMILIA','ORIGEN AVISO','TURNO','VHLO','TIPO ORDEN'];
     const normStr=s=>s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
     data.forEach(d=>{
@@ -238,7 +218,6 @@ function crearGraficos(){
       pushHistorial(); renderTags(); actualizarGraficos();
     };
   }
-
   function opsBarra(campo, horiz){
     return {
       responsive:true, maintainAspectRatio:false,
@@ -257,93 +236,11 @@ function crearGraficos(){
     options:opsBarra('FAMILIA AVERIA',true)
   });
 
-  charts.turno=new Chart(document.getElementById('graficoTurno').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:2,borderColor:modoOscuro?'#1e1e2e':'#f0f4ff'}]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      layout:{padding:40},
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>{
-          const tot=ctx.dataset.data.reduce((a,b)=>a+b,0);
-          return ` ${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
-        }}}
-      },
-      onClick:(evt,elems)=>{
-        if(!elems.length) return;
-        const val=evt.chart.data.labels[elems[0].index];
-        if(filtrosActivos['TURNO']===val) delete filtrosActivos['TURNO']; else filtrosActivos['TURNO']=val;
-        pushHistorial(); renderTags(); actualizarGraficos();
-      }
-    },
-    plugins:[{
-      id:'turnoLabels',
-      afterDraw(chart){
-        const ctx2=chart.ctx, ds=chart.data.datasets[0], meta=chart.getDatasetMeta(0);
-        const tot=ds.data.reduce((a,b)=>a+b,0); if(!tot) return;
-        ctx2.save();
-        meta.data.forEach((arc,i)=>{
-          const val=ds.data[i]; if(!val) return;
-          const pct=((val/tot)*100).toFixed(1);
-          const lbl=chart.data.labels[i]; if(!lbl) return;
-          const ang=(arc.startAngle+arc.endAngle)/2;
-          const midR=(arc.innerRadius+arc.outerRadius)/2;
-          const cx=arc.x+Math.cos(ang)*midR, cy=arc.y+Math.sin(ang)*midR;
-          const outerR=arc.outerRadius+18;
-          const lx=arc.x+Math.cos(ang)*outerR, ly=arc.y+Math.sin(ang)*outerR;
-          ctx2.beginPath(); ctx2.moveTo(cx,cy); ctx2.lineTo(lx,ly);
-          ctx2.strokeStyle='rgba(200,200,200,0.5)'; ctx2.lineWidth=1; ctx2.stroke();
-          ctx2.font='bold 11px Inter,sans-serif';
-          ctx2.fillStyle=getLegendColor();
-          ctx2.textAlign=Math.cos(ang)>=0?'left':'right';
-          ctx2.fillText(`${lbl} (${pct}%)`, lx+(Math.cos(ang)>=0?5:-5), ly+4);
-        });
-        ctx2.restore();
-      }
-    }]
-  });
-
-  charts.origen=new Chart(document.getElementById('graficoOrigen').getContext('2d'),{
-    type:'bar', data:{labels:[],datasets:[{label:'Origen Aviso',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
-    options:opsBarra('ORIGEN AVISO',false)
-  });
-
-  charts.familiaVeh=new Chart(document.getElementById('graficoFamiliaVeh').getContext('2d'),{
-    type:'bar', data:{labels:[],datasets:[{label:'Familia Vehículo',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
-    options:opsBarra('FAMILIA',true)
-  });
-
-  charts.vhlo=new Chart(document.getElementById('graficoVHLO').getContext('2d'),{
-    type:'bar', data:{labels:[],datasets:[{label:'Vehículo',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
-    options:opsBarra('VHLO',false)
-  });
-
-  charts.descripcion=new Chart(document.getElementById('graficoDescripcion').getContext('2d'),{
-    type:'bar', data:{labels:[],datasets:[{label:'Descripción Avería',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      indexAxis:'y',
-      plugins:{legend:{display:true,position:'bottom',labels:{color:col,boxWidth:12,padding:8,font:{size:10}}}},
-      scales:{
-        x:{ticks:{color:col},grid:{color:grid}},
-        y:{ticks:{color:col,font:{size:10}},grid:{color:grid}}
-      },
-      onClick:(evt,elems)=>{
-        if(!elems.length) return;
-        const val=evt.chart.data.labels[elems[0].index];
-        if(filtrosActivos['_DESCRIPCION_NORM']===val) delete filtrosActivos['_DESCRIPCION_NORM'];
-        else filtrosActivos['_DESCRIPCION_NORM']=val;
-        pushHistorial(); renderTags(); actualizarGraficos();
-      }
-    }
-  });
-
-  // ── Subfamilias Carga Trasera ──
-  function crearDoughnutSubfamilia(canvasId, titulo, campoFiltro) {
+  // ── Doughnut helper con etiquetas externas ──
+  function crearDoughnutEtiquetas(canvasId, borderColor){
     return new Chart(document.getElementById(canvasId).getContext('2d'), {
       type: 'doughnut',
-      data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: modoOscuro ? '#0f0f1a' : '#f0f4ff' }] },
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: borderColor || (modoOscuro?'#1e1e2e':'#f0f4ff') }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         layout: { padding: 50 },
@@ -351,19 +248,12 @@ function crearGraficos(){
           legend: { display: false },
           tooltip: { callbacks: { label: ctx => {
             const tot = ctx.dataset.data.reduce((a,b) => a+b, 0);
-            return ` ${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
+            return `${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
           }}}
-        },
-        onClick: (evt, elems) => {
-          if (!elems.length) return;
-          const val = evt.chart.data.labels[elems[0].index];
-          if (filtrosActivos[campoFiltro] === val) delete filtrosActivos[campoFiltro];
-          else filtrosActivos[campoFiltro] = val;
-          pushHistorial(); renderTags(); actualizarGraficos();
         }
       },
       plugins: [{
-        id: 'subfamiliaLabels',
+        id: canvasId+'Labels',
         afterDraw(chart) {
           const ctx2 = chart.ctx, ds = chart.data.datasets[0], meta = chart.getDatasetMeta(0);
           const tot = ds.data.reduce((a,b) => a+b, 0); if (!tot) return;
@@ -384,7 +274,7 @@ function crearGraficos(){
             ctx2.font = 'bold 11px Inter,sans-serif';
             ctx2.fillStyle = getLegendColor();
             ctx2.textAlign = Math.cos(ang) >= 0 ? 'left' : 'right';
-            ctx2.fillText(`${lbl}: ${pct}%`, lx + (Math.cos(ang) >= 0 ? 5 : -5), ly + 4);
+            ctx2.fillText(`${lbl} (${pct}%)`, lx + (Math.cos(ang) >= 0 ? 5 : -5), ly + 4);
           });
           ctx2.restore();
         }
@@ -392,8 +282,178 @@ function crearGraficos(){
     });
   }
 
-  charts.cargaTrasera = crearDoughnutSubfamilia('graficoCargaTrasera', 'Carga Trasera', '_SUBFAM_TRASERA');
-  charts.cargaLateral = crearDoughnutSubfamilia('graficoCargaLateral', 'Carga Lateral', '_SUBFAM_LATERAL');
+  charts.turno = crearDoughnutEtiquetas('graficoTurno', modoOscuro?'#1e1e2e':'#f0f4ff');
+  charts.turno.options.onClick = (evt,elems) => {
+    if(!elems.length) return;
+    const val=evt.chart.data.labels[elems[0].index];
+    if(filtrosActivos['TURNO']===val) delete filtrosActivos['TURNO']; else filtrosActivos['TURNO']=val;
+    pushHistorial(); renderTags(); actualizarGraficos();
+  };
+
+  // ── Tipo de Orden (doughnut) ──
+  charts.tipoOrden = crearDoughnutEtiquetas('graficoTipoOrden', modoOscuro?'#1e1e2e':'#f0f4ff');
+  charts.tipoOrden.options.onClick = (evt,elems) => {
+    if(!elems.length) return;
+    const val=evt.chart.data.labels[elems[0].index];
+    // Filtro especial por etiqueta (no por código)
+    if(filtrosActivos['_TIPO_ORDEN_LABEL']===val) delete filtrosActivos['_TIPO_ORDEN_LABEL'];
+    else filtrosActivos['_TIPO_ORDEN_LABEL']=val;
+    pushHistorial(); renderTags(); actualizarGraficos();
+  };
+
+  // ── Recurrencia (doughnut con % central) ──
+  charts.recurrencia = new Chart(document.getElementById('graficoRecurrencia').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Únicos (1 avería)', 'Reincidentes (≥2)'],
+      datasets: [{
+        data: [0, 0],
+        backgroundColor: ['#06d6a0', '#ef476f'],
+        borderWidth: 2,
+        borderColor: modoOscuro ? '#1e1e2e' : '#f0f4ff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: 50 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => {
+          const tot = ctx.dataset.data.reduce((a,b) => a+b, 0);
+          return `${ctx.label}: ${ctx.parsed} (${((ctx.parsed/tot)*100).toFixed(1)}%)`;
+        }}}
+      }
+    },
+    plugins: [{
+      id: 'recurrenciaCenter',
+      afterDraw(chart) {
+        const ctx2 = chart.ctx;
+        const ds = chart.data.datasets[0];
+        const tot = ds.data.reduce((a,b) => a+b, 0);
+        if (!tot) return;
+        const pct = ((ds.data[1] / tot) * 100).toFixed(1);
+        const { width, height } = chart;
+        ctx2.save();
+        ctx2.font = 'bold 26px Rajdhani,sans-serif';
+        ctx2.fillStyle = '#ef476f';
+        ctx2.textAlign = 'center';
+        ctx2.textBaseline = 'middle';
+        ctx2.fillText(`${pct}%`, width / 2, height / 2 - 8);
+        ctx2.font = '500 10px Inter,sans-serif';
+        ctx2.fillStyle = getLegendColor();
+        ctx2.fillText('tasa recurrencia', width / 2, height / 2 + 14);
+        ctx2.restore();
+      }
+    },
+    {
+      id: 'recurrenciaLabels',
+      afterDraw(chart) {
+        const ctx2 = chart.ctx, ds = chart.data.datasets[0], meta = chart.getDatasetMeta(0);
+        const tot = ds.data.reduce((a,b) => a+b, 0); if (!tot) return;
+        ctx2.save();
+        meta.data.forEach((arc, i) => {
+          const val = ds.data[i]; if (!val) return;
+          const lbl = chart.data.labels[i]; if (!lbl) return;
+          const ang = (arc.startAngle + arc.endAngle) / 2;
+          const midR = (arc.innerRadius + arc.outerRadius) / 2;
+          const cx = arc.x + Math.cos(ang) * midR;
+          const cy = arc.y + Math.sin(ang) * midR;
+          const outerR = arc.outerRadius + 20;
+          const lx = arc.x + Math.cos(ang) * outerR;
+          const ly = arc.y + Math.sin(ang) * outerR;
+          ctx2.beginPath(); ctx2.moveTo(cx, cy); ctx2.lineTo(lx, ly);
+          ctx2.strokeStyle = 'rgba(200,200,200,0.4)'; ctx2.lineWidth = 1; ctx2.stroke();
+          ctx2.font = 'bold 11px Inter,sans-serif';
+          ctx2.fillStyle = getLegendColor();
+          ctx2.textAlign = Math.cos(ang) >= 0 ? 'left' : 'right';
+          ctx2.fillText(lbl, lx + (Math.cos(ang) >= 0 ? 5 : -5), ly + 4);
+        });
+        ctx2.restore();
+      }
+    }]
+  });
+  // ── Click en recurrencia: filtra vehículos únicos o reincidentes ──
+  charts.recurrencia.options.onClick = (evt, elems) => {
+    if (!elems.length) return;
+    const idx = elems[0].index;
+    const tipo = idx === 0 ? 'unicos' : 'reincidentes';
+    if (filtrosActivos['_REINCIDENCIA'] === tipo) delete filtrosActivos['_REINCIDENCIA'];
+    else filtrosActivos['_REINCIDENCIA'] = tipo;
+    pushHistorial(); renderTags(); actualizarGraficos();
+  };
+
+  charts.origen=new Chart(document.getElementById('graficoOrigen').getContext('2d'),{
+    type:'bar', data:{labels:[],datasets:[{label:'Origen Aviso',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
+    options:opsBarra('ORIGEN AVISO',false)
+  });
+  charts.familiaVeh=new Chart(document.getElementById('graficoFamiliaVeh').getContext('2d'),{
+    type:'bar', data:{labels:[],datasets:[{label:'Familia Vehículo',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
+    options:opsBarra('FAMILIA',true)
+  });
+  charts.vhlo=new Chart(document.getElementById('graficoVHLO').getContext('2d'),{
+    type:'bar', data:{labels:[],datasets:[{label:'Vehículo',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
+    options:opsBarra('VHLO',false)
+  });
+  charts.descripcion=new Chart(document.getElementById('graficoDescripcion').getContext('2d'),{
+    type:'bar', data:{labels:[],datasets:[{label:'Descripción Avería',data:[],backgroundColor:[],borderWidth:0,borderRadius:3}]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      indexAxis:'y',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:col,boxWidth:12,padding:8,font:{size:10}}}},
+      scales:{
+        x:{ticks:{color:col},grid:{color:grid}},
+        y:{ticks:{color:col,font:{size:10}},grid:{color:grid}}
+      },
+      onClick:(evt,elems)=>{
+        if(!elems.length) return;
+        const val=evt.chart.data.labels[elems[0].index];
+        if(filtrosActivos['_DESCRIPCION_NORM']===val) delete filtrosActivos['_DESCRIPCION_NORM'];
+        else filtrosActivos['_DESCRIPCION_NORM']=val;
+        pushHistorial(); renderTags(); actualizarGraficos();
+      }
+    }
+  });
+
+  // ── Subfamilias Carga Trasera / Lateral ──
+  function crearDoughnutSubfamilia(canvasId) {
+    return crearDoughnutEtiquetas(canvasId, modoOscuro ? '#0f0f1a' : '#f0f4ff');
+  }
+  charts.cargaTrasera = crearDoughnutSubfamilia('graficoCargaTrasera');
+  charts.cargaLateral = crearDoughnutSubfamilia('graficoCargaLateral');
+
+  // ── Top Vehículos Reincidentes (barras horizontales) ──
+  charts.topReincidentes = new Chart(document.getElementById('graficoTopReincidentes').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Nº averías',
+        data: [],
+        backgroundColor: [],
+        borderWidth: 0,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} averías` } }
+      },
+      scales: {
+        x: { ticks: { color: col }, grid: { color: grid } },
+        y: { ticks: { color: col, font: { size: 10 } }, grid: { color: grid } }
+      },
+      onClick: (evt, elems) => {
+        if (!elems.length) return;
+        const val = evt.chart.data.labels[elems[0].index];
+        if (filtrosActivos['VHLO'] === val) delete filtrosActivos['VHLO'];
+        else filtrosActivos['VHLO'] = val;
+        pushHistorial(); renderTags(); actualizarGraficos();
+      }
+    }
+  });
 
   charts.evolucion=new Chart(document.getElementById('graficoEvolucion').getContext('2d'),{
     type:'line', data:{labels:[],datasets:[]},
@@ -406,7 +466,7 @@ function crearGraficos(){
           mode:'index', intersect:false,
           callbacks:{
             title: ctx => ctx[0]?.label || '',
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
           }
         }
       },
@@ -432,18 +492,15 @@ function inicializarTabla(){
     $(this).html(`<input type="text" placeholder="${title}" style="width:100%;font-size:11px;padding:2px 4px;background:var(--input-bg);color:var(--input-text);border:1px solid var(--border);border-radius:3px;" />`);
     $('input',this).on('keyup change',function(){ if(tablaDT.column(i).search()!==this.value) tablaDT.column(i).search(this.value).draw(); });
   });
-
   tablaDT=$('#tablaAverias').DataTable({
     data:[],
     columns:[
       {title:'Vehículo',      data:'VHLO',                   width:'80px'},
-      {title:'Familia Veh.',  data:'FAMILIA',                width:'110px'},
+      {title:'Familia Veh.',  data:'FAMILIA',                 width:'110px'},
       {title:'Familia Avería',data:'FAMILIA AVERIA',         width:'130px'},
       {title:'Descripción',   data:null,                     width:'220px', defaultContent:'-',
         render:function(d,t,row){
-          // Buscar campo descripcion con cualquier variante de nombre
           for(const k of Object.keys(row)){
-            // Normalizar: quitar tildes, caracteres especiales, pasar a mayúsculas
             const kn=k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z ]/g,'').trim();
             if(kn==='DESCRIPCION AVERIA'||kn==='DESCRIPCION'){
               const v=row[k];
@@ -453,12 +510,12 @@ function inicializarTabla(){
           return '-';
         }},
       {title:'Deficiencias',  data:'DEFICIENCIAS DETECTADAS',width:'180px', defaultContent:'-',
-        render:function(d){ return d?`<span title="${d}" style="display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</span>`:'-'; }},
+        render:function(d){ return d? `<span title="${d}" style="display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</span>` :'-'; }},
       {title:'Fecha Aviso',   data:'FECHA AVISO',            width:'90px'},
       {title:'Turno',         data:'TURNO',                  width:'70px'},
       {title:'Origen Aviso',  data:'ORIGEN AVISO',           width:'110px'},
       {title:'Tipo Orden',    data:'TIPO ORDEN',             width:'90px'},
-      {title:'Conductor',     data:'CONDUCTOR',              width:'100px', defaultContent:'-'},
+      {title:'Conductor',     data:'CONDUCTOR',              width:'100px',  defaultContent:'-'},
       {title:'Nº Aviso',      data:null,                     width:'110px', defaultContent:'-',
         render:function(d,t,row){
           for(const k of Object.keys(row)){
@@ -468,13 +525,11 @@ function inicializarTabla(){
         }}
     ],
     orderCellsTop:true, colReorder:true, scrollX:true, pageLength:25,
-    language:{search:'Buscar:',lengthMenu:'Mostrar _MENU_ registros',info:'Mostrando _START_–_END_ de _TOTAL_',paginate:{previous:'‹',next:'›'}}
+    language:{search:'Buscar:',lengthMenu:'Mostrar  MENU  registros',info:'Mostrando  START – END  de  TOTAL ',paginate:{previous:'‹',next:'›'}}
   });
-
   if($.fn.colResizable){
     $('#tablaAverias').colResizable({liveDrag:true,gripInnerHtml:"<div class='col-grip'></div>",draggingClass:'col-dragging',minWidth:50});
   }
-
   const btnAleatorio=document.getElementById('btnAleatorio');
   if(btnAleatorio) btnAleatorio.addEventListener('click',function(){
     window._ordenAleatorio = !window._ordenAleatorio;
@@ -482,9 +537,7 @@ function inicializarTabla(){
     this.style.background = window._ordenAleatorio ? 'var(--accent)' : '';
     this.style.color = window._ordenAleatorio ? 'var(--bg)' : '';
     if(window._ordenAleatorio){
-      // Quitar ordenación por columna para que no interfiera
       tablaDT.order([]).draw(false);
-      // Barajar el array de datos y recargar
       const data = tablaDT.rows({search:'applied'}).data().toArray();
       for(let i=data.length-1;i>0;i--){
         const j=Math.floor(Math.random()*(i+1));
@@ -495,7 +548,6 @@ function inicializarTabla(){
       actualizarGraficos();
     }
   });
-
   document.getElementById('btnColumnas').addEventListener('click',function(e){
     e.stopPropagation();
     let menu=document.getElementById('menuColumnas');
@@ -517,13 +569,12 @@ function inicializarTabla(){
     });
     menu.appendChild(lista); document.body.appendChild(menu);
     const r=this.getBoundingClientRect();
-    // Mantener dentro de la ventana
-  requestAnimationFrame(()=>{
-    const mW=menu.offsetWidth, mH=menu.offsetHeight;
-    const top=(r.bottom+4+mH>window.innerHeight) ? Math.max(4,r.top-mH-4) : r.bottom+4;
-    const left=(r.left+mW>window.innerWidth) ? Math.max(4,window.innerWidth-mW-8) : r.left;
-    menu.style.top=top+'px'; menu.style.left=left+'px';
-  });
+    requestAnimationFrame(()=>{
+      const mW=menu.offsetWidth, mH=menu.offsetHeight;
+      const top=(r.bottom+4+mH>window.innerHeight) ? Math.max(4,r.top-mH-4) : r.bottom+4;
+      const left=(r.left+mW>window.innerWidth) ? Math.max(4,window.innerWidth-mW-8) : r.left;
+      menu.style.top=top+'px'; menu.style.left=left+'px';
+    });
     setTimeout(()=>document.addEventListener('click',cerrarAlFuera),10);
   });
 }
@@ -532,22 +583,59 @@ function inicializarTabla(){
 function actualizarGraficos(){
   const fi=document.getElementById('fechaInicio').valueAsDate;
   const ff=document.getElementById('fechaFin').valueAsDate;
-
   let datos=window.dataTabla.filter(d=>{
     if(!d.fechaJS || isNaN(d.fechaJS)) return false;
-    if(!fi || !ff) return true; // sin rango = mostrar todo
+    if(!fi || !ff) return true;
     return cmpFecha(d.fechaJS,fi)>=0 && cmpFecha(d.fechaJS,ff)<=0;
   });
-  const CLAVES_ESPECIALES=['_DESCRIPCION_NORM','_SUBFAM_TRASERA','_SUBFAM_LATERAL'];
-  for(const k in filtrosActivos){ if(filtrosActivos[k] && !CLAVES_ESPECIALES.includes(k)) datos=datos.filter(d=>d[k] && d[k].toString().trim().toUpperCase()===filtrosActivos[k].toString().trim().toUpperCase()); }
+
+  // Filtros por campos directos (excluyendo los especiales)
+  const camposDirectos = ['FAMILIA AVERIA','FAMILIA','ORIGEN AVISO','TURNO','VHLO','TIPO ORDEN'];
+  for(const k in filtrosActivos){
+    if(!filtrosActivos[k]) continue;
+    if(k.startsWith('_')) continue; // filtros especiales se tratan aparte
+    if(!camposDirectos.includes(k)) continue;
+    datos = datos.filter(d => d[k] && d[k].toString().trim().toUpperCase() === filtrosActivos[k].toString().trim().toUpperCase());
+  }
   for(const k in exclusiones){ const ex=exclusiones[k]; if(ex.size) datos=datos.filter(d=>{ const v=d[k]?d[k].toString().trim().toUpperCase():''; return !ex.has(v); }); }
-  // Excluir siempre registros sin vehículo
   datos=datos.filter(d=>d.VHLO && d.VHLO.toString().trim()!=="");
-  // Filtro por descripción avería
   if(filtrosActivos['_DESCRIPCION_NORM']) datos=datos.filter(d=>getDescripcion(d)===filtrosActivos['_DESCRIPCION_NORM']);
-  // Filtro por subfamilia de carga trasera / lateral
-  if(filtrosActivos['_SUBFAM_TRASERA']) datos=datos.filter(d=>getSubfamiliaTrasera(d['VHLO'],d['FAMILIA'])===filtrosActivos['_SUBFAM_TRASERA']);
-  if(filtrosActivos['_SUBFAM_LATERAL']) datos=datos.filter(d=>getSubfamiliaLateral(d['VHLO'])===filtrosActivos['_SUBFAM_LATERAL']);
+
+  // ── Filtro especial: TIPO ORDEN por etiqueta ──
+  if (filtrosActivos['_TIPO_ORDEN_LABEL']) {
+    const etiqueta = filtrosActivos['_TIPO_ORDEN_LABEL'];
+    const mapping = getCodigosParaEtiqueta(etiqueta);
+    if (mapping && mapping.modo === 'resto') {
+      // Todo lo que NO sea L02 ni L05
+      datos = datos.filter(d => {
+        const cod = (d['TIPO ORDEN'] || '').toString().trim().toUpperCase();
+        return cod && cod !== 'L02' && cod !== 'L05' && cod !== '****';
+      });
+    } else if (Array.isArray(mapping) && mapping.length) {
+      datos = datos.filter(d => mapping.includes((d['TIPO ORDEN'] || '').toString().trim().toUpperCase()));
+    }
+  }
+
+  // ── Filtro especial: REINCIDENCIA ──
+  if (filtrosActivos['_REINCIDENCIA']) {
+    const tipo = filtrosActivos['_REINCIDENCIA'];
+    // Calcular conteo por vehículo en el dataset actual (sin este filtro para no auto-referenciar)
+    const vhCountBase = {};
+    // Usamos datos ya filtrados por lo demás, pero necesitamos el conteo real
+    // Para evitar bucle, contamos sobre los datos actuales (que ya tienen los otros filtros aplicados)
+    datos.forEach(d => {
+      const v = d.VHLO;
+      if (!v || v === '****') return;
+      vhCountBase[v] = (vhCountBase[v] || 0) + 1;
+    });
+    if (tipo === 'unicos') {
+      const unicosSet = new Set(Object.entries(vhCountBase).filter(([_,n]) => n === 1).map(([v,_]) => v));
+      datos = datos.filter(d => unicosSet.has(d.VHLO));
+    } else if (tipo === 'reincidentes') {
+      const reincidentesSet = new Set(Object.entries(vhCountBase).filter(([_,n]) => n >= 2).map(([v,_]) => v));
+      datos = datos.filter(d => reincidentesSet.has(d.VHLO));
+    }
+  }
 
   [{key:'familia',campo:'FAMILIA AVERIA'},{key:'origen',campo:'ORIGEN AVISO'},{key:'familiaVeh',campo:'FAMILIA'},{key:'vhlo',campo:'VHLO'}]
   .forEach(({key,campo})=>{
@@ -570,7 +658,7 @@ function actualizarGraficos(){
       const v=getDescripcion(d);
       if(v&&v!=='****') cntD[v]=(cntD[v]||0)+1;
     });
-    const sortedD=Object.entries(cntD).sort((a,b)=>b[1]-a[1]).slice(0,30); // top 30
+    const sortedD=Object.entries(cntD).sort((a,b)=>b[1]-a[1]).slice(0,30);
     const labelsD=sortedD.map(e=>e[0]), valuesD=sortedD.map(e=>e[1]);
     const colsD=genColores(labelsD.length);
     const fvD=filtrosActivos['_DESCRIPCION_NORM'];
@@ -581,10 +669,98 @@ function actualizarGraficos(){
     charts.descripcion.update();
   }
 
+  // ── Tipo de Orden (mapea L02→Accidente, L05→Golpe/Mal Uso, resto→Avería) ──
+  if (charts.tipoOrden) {
+    const cnt = {};
+    datos.forEach(d => {
+      const etiqueta = getEtiquetaTipoOrden(d['TIPO ORDEN']);
+      if (!etiqueta) return;
+      cnt[etiqueta] = (cnt[etiqueta] || 0) + 1;
+    });
+    // Orden fijo: Accidente, Golpe/Mal Uso, Avería
+    const orden = ['Accidente', 'Golpe / Mal Uso', ETIQUETA_AVERIA];
+    const labels = orden.filter(l => cnt[l]);
+    const values = labels.map(l => cnt[l]);
+    const colorMap = { 'Accidente': '#ef476f', 'Golpe / Mal Uso': '#ffd166', 'Avería': '#118ab2' };
+    const bg = labels.map(l => colorMap[l] || '#8888aa');
+    const fv = filtrosActivos['_TIPO_ORDEN_LABEL'];
+    const bgFinal = fv ? labels.map(l => l===fv ? (colorMap[l]||'#8888aa') : (colorMap[l]||'#8888aa')+'55') : bg;
+
+    charts.tipoOrden.data.labels = labels;
+    charts.tipoOrden.data.datasets[0].data = values;
+    charts.tipoOrden.data.datasets[0].backgroundColor = bgFinal;
+    charts.tipoOrden.data.datasets[0].borderColor = modoOscuro ? '#1e1e2e' : '#f0f4ff';
+    charts.tipoOrden.update();
+  }
+
+  // ── Tasa de Recurrencia ──
+  if (charts.recurrencia) {
+    const vhCount = {};
+    datos.forEach(d => {
+      const v = d.VHLO;
+      if (!v || v === '****') return;
+      vhCount[v] = (vhCount[v] || 0) + 1;
+    });
+    const totalVeh = Object.keys(vhCount).length;
+    const reincidentes = Object.values(vhCount).filter(n => n >= 2).length;
+    const unicos = totalVeh - reincidentes;
+
+    charts.recurrencia.data.labels = [
+      `Únicos (${unicos})`,
+      `Reincidentes (${reincidentes})`
+    ];
+    charts.recurrencia.data.datasets[0].data = [unicos, reincidentes];
+    charts.recurrencia.data.datasets[0].borderColor = modoOscuro ? '#1e1e2e' : '#f0f4ff';
+    // Resaltar la sección seleccionada
+    const fv = filtrosActivos['_REINCIDENCIA'];
+    if (fv === 'unicos') {
+      charts.recurrencia.data.datasets[0].backgroundColor = ['#06d6a0', '#ef476f55'];
+    } else if (fv === 'reincidentes') {
+      charts.recurrencia.data.datasets[0].backgroundColor = ['#06d6a055', '#ef476f'];
+    } else {
+      charts.recurrencia.data.datasets[0].backgroundColor = ['#06d6a0', '#ef476f'];
+    }
+    charts.recurrencia.update();
+  }
+
+  // ── Top Vehículos Reincidentes ──
+  if (charts.topReincidentes) {
+    const vhCount = {};
+    datos.forEach(d => {
+      const v = d.VHLO;
+      if (!v || v === '****') return;
+      vhCount[v] = (vhCount[v] || 0) + 1;
+    });
+    const top = Object.entries(vhCount)
+      .filter(([_, n]) => n >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+    const labels = top.map(e => e[0]);
+    const values = top.map(e => e[1]);
+    const max = values[0] || 1;
+    const bg = values.map(n => {
+      const ratio = n / max;
+      const r = Math.round(239 * ratio + 17 * (1-ratio));
+      const g = Math.round(71 * ratio + 138 * (1-ratio));
+      const b = Math.round(111 * ratio + 178 * (1-ratio));
+      return `rgb(${r},${g},${b})`;
+    });
+    const fv = filtrosActivos['VHLO'];
+    const bgFinal = fv ? labels.map((l, i) => l===fv ? bg[i] : bg[i].replace('rgb','rgba').replace(')',',0.3)')) : bg;
+
+    charts.topReincidentes.data.labels = labels;
+    charts.topReincidentes.data.datasets[0].data = values;
+    charts.topReincidentes.data.datasets[0].backgroundColor = bgFinal;
+    charts.topReincidentes.options.scales.x.ticks.color = getLegendColor();
+    charts.topReincidentes.options.scales.y.ticks.color = getLegendColor();
+    charts.topReincidentes.options.scales.x.grid.color = getGridColor();
+    charts.topReincidentes.options.scales.y.grid.color = getGridColor();
+    charts.topReincidentes.update();
+  }
+
   // ── Subfamilias Carga Trasera ──
   if (charts.cargaTrasera) {
     const trasera = datos.filter(d => d['FAMILIA'] === 'CARGA_TRASERA' || (d['FAMILIA']||'').toUpperCase().includes('MINICOMPACTADOR'));
-    // incidencias y vehículos únicos por subfamilia
     const cntT = {}, vhlosT = {};
     trasera.forEach(d => {
       const sub = getSubfamiliaTrasera(d['VHLO'], d['FAMILIA']);
@@ -593,25 +769,18 @@ function actualizarGraficos(){
       if (!vhlosT[sub]) vhlosT[sub] = new Set();
       vhlosT[sub].add(d['VHLO']);
     });
-    const labT = Object.keys(cntT), valT = Object.values(cntT), colT = colorSubfam(labT);
-    const fvT = filtrosActivos['_SUBFAM_TRASERA'];
+    const labT = Object.keys(cntT), valT = Object.values(cntT), colT = genColores(labT.length);
     charts.cargaTrasera.data.labels = labT;
     charts.cargaTrasera.data.datasets[0].data = valT;
-    charts.cargaTrasera.data.datasets[0].backgroundColor = labT.map((l,i)=>fvT&&l!==fvT?colT[i]+'55':colT[i]);
+    charts.cargaTrasera.data.datasets[0].backgroundColor = colT;
     charts.cargaTrasera.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaTrasera.update();
-    // Tabla resumen
     const tbT = document.querySelector('#tabla-trasera tbody');
     if (tbT) {
       tbT.innerHTML = labT.map((sub, i) => {
         const nvh = vhlosT[sub] ? vhlosT[sub].size : 1;
         const media = (cntT[sub] / nvh).toFixed(1);
-        return `<tr>
-          <td><span class="color-dot" style="background:${colT[i]}"></span>${sub}</td>
-          <td>${cntT[sub]}</td>
-          <td>${nvh}</td>
-          <td class="media">${media}</td>
-        </tr>`;
+        return `<tr><td><span class="color-dot" style="background:${colT[i]}"></span>${sub}</td><td>${cntT[sub]}</td><td>${nvh}</td><td class="media">${media}</td></tr>`;
       }).join('');
     }
   }
@@ -627,29 +796,23 @@ function actualizarGraficos(){
       if (!vhlosL[sub]) vhlosL[sub] = new Set();
       vhlosL[sub].add(d['VHLO']);
     });
-    const labL = Object.keys(cntL), valL = Object.values(cntL), colL = colorSubfam(labL);
-    const fvL = filtrosActivos['_SUBFAM_LATERAL'];
+    const labL = Object.keys(cntL), valL = Object.values(cntL), colL = genColores(labL.length);
     charts.cargaLateral.data.labels = labL;
     charts.cargaLateral.data.datasets[0].data = valL;
-    charts.cargaLateral.data.datasets[0].backgroundColor = labL.map((l,i)=>fvL&&l!==fvL?colL[i]+'55':colL[i]);
+    charts.cargaLateral.data.datasets[0].backgroundColor = colL;
     charts.cargaLateral.data.datasets[0].borderColor = modoOscuro ? '#0f0f1a' : '#f0f4ff';
     charts.cargaLateral.update();
-    // Tabla resumen
     const tbL = document.querySelector('#tabla-lateral tbody');
     if (tbL) {
       tbL.innerHTML = labL.map((sub, i) => {
         const nvh = vhlosL[sub] ? vhlosL[sub].size : 1;
         const media = (cntL[sub] / nvh).toFixed(1);
-        return `<tr>
-          <td><span class="color-dot" style="background:${colL[i]}"></span>${sub}</td>
-          <td>${cntL[sub]}</td>
-          <td>${nvh}</td>
-          <td class="media">${media}</td>
-        </tr>`;
+        return `<tr><td><span class="color-dot" style="background:${colL[i]}"></span>${sub}</td><td>${cntL[sub]}</td><td>${nvh}</td><td class="media">${media}</td></tr>`;
       }).join('');
     }
   }
 
+  // Turno
   const ctT={};
   datos.forEach(d=>{ const v=d['TURNO']; if(v&&v!=='****') ctT[v]=(ctT[v]||0)+1; });
   charts.turno.data.labels=Object.keys(ctT);
@@ -658,28 +821,27 @@ function actualizarGraficos(){
   charts.turno.data.datasets[0].borderColor=modoOscuro?'#1e1e2e':'#f0f4ff';
   charts.turno.update();
 
+  // Evolución
   const evol={};
   datos.forEach(d=>{
     const mes=`${d.fechaJS.getFullYear()}-${String(d.fechaJS.getMonth()+1).padStart(2,'0')}`;
     if(!evol[mes]) evol[mes]={};
     const fam=d['FAMILIA AVERIA'];
-    if(fam&&fam!=='****') evol[mes][fam]=(evol[mes][fam]||0)+1;
+    if(fam&&fam!=='') evol[mes][fam]=(evol[mes][fam]||0)+1;
   });
   const lEv=Object.keys(evol).sort();
-  const fams=[...new Set(datos.map(d=>d['FAMILIA AVERIA']).filter(f=>f&&f!=='****'))];
+  const fams=[...new Set(datos.map(d=>d['FAMILIA AVERIA']).filter(f=>f&&f!==''))];
   const cEv=genColores(fams.length);
   charts.evolucion.data.labels=lEv;
   charts.evolucion.data.datasets=fams.map((fam,i)=>({
     label:fam, data:lEv.map(l=>evol[l][fam]||0),
-    borderColor:cEv[i], backgroundColor:conAlpha(cEv[i]), fill:false, tension:0.3, pointRadius:3
+    borderColor:cEv[i], backgroundColor:cEv[i]+'22', fill:false, tension:0.3, pointRadius:3
   }));
   charts.evolucion.options.plugins.legend.labels.color=getLegendColor();
   charts.evolucion.update();
 
   const datosFiltrados=datos.filter(d=>d.VHLO && d.VHLO.toString().trim()!=="");
   tablaDT.clear(); tablaDT.rows.add(datosFiltrados); tablaDT.draw();
-
-  // Reactivar orden aleatorio si estaba activo
   if(window._ordenAleatorio){
     tablaDT.order([]).draw(false);
     const data=tablaDT.rows({search:'applied'}).data().toArray();
@@ -689,7 +851,6 @@ function actualizarGraficos(){
     }
     tablaDT.clear(); tablaDT.rows.add(data); tablaDT.draw(false);
   }
-
   document.getElementById('totalAverias').textContent=datos.length.toLocaleString('es-ES');
   const dias=new Set(datos.filter(d=>d.fechaJS).map(d=>d.fechaJS.toDateString())).size;
   document.getElementById('promedioDiario').textContent=dias?(datos.length/dias).toFixed(1):'0';
@@ -698,7 +859,7 @@ function actualizarGraficos(){
   document.getElementById('vehiculoTop').textContent=Object.keys(vc).length?Object.keys(vc).reduce((a,b)=>vc[a]>vc[b]?a:b):'-';
 }
 
-// ── Helper: obtener valor de descripción normalizando el nombre del campo ──
+// ── Helper ──
 function getDescripcion(row){
   for(const k of Object.keys(row)){
     const kn=k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z ]/g,'').trim();
@@ -706,20 +867,18 @@ function getDescripcion(row){
   }
   return '';
 }
-
 function cmpFecha(a,b){
   return new Date(a.getFullYear(),a.getMonth(),a.getDate())-new Date(b.getFullYear(),b.getMonth(),b.getDate());
 }
 
-// ── Resize altura + anchura — handler global único ──
+// ── Resize ──
 function iniciarResizeAltura(){
   let panel=null, dir='', startX=0, startY=0, startW=0, startH=0;
-
   document.querySelectorAll('.resize-handle, .resize-handle-e, .resize-handle-se').forEach(h=>{
     h.addEventListener('mousedown', e=>{
       e.preventDefault();
       e.stopPropagation();
-      panel = document.getElementById(h.dataset.panel);
+      panel = h.closest('.chart-panel');
       startX = e.clientX; startY = e.clientY;
       startW = panel.offsetWidth; startH = panel.offsetHeight;
       dir = h.classList.contains('resize-handle-se') ? 'se'
@@ -728,14 +887,12 @@ function iniciarResizeAltura(){
       document.body.style.userSelect='none';
     });
   });
-
   document.addEventListener('mousemove', e=>{
     if(!panel) return;
     if(dir==='s'||dir==='se'){
       panel.style.height = Math.max(150, startH+(e.clientY-startY))+'px';
     }
     if(dir==='e'||dir==='se'){
-      // Resize horizontal: ajustar flex-basis de este panel y el hermano en la misma fila
       const row = panel.closest('.chart-row');
       if(!row || panel.classList.contains('wide')) return;
       const rowW = row.getBoundingClientRect().width;
@@ -744,13 +901,11 @@ function iniciarResizeAltura(){
       const delta = e.clientX - startX;
       const newW = Math.min(rowW - 214, Math.max(200, startW + delta));
       const sibW = rowW - newW - 14;
-      // Aplicar flex-basis para que cada panel ocupe exactamente su ancho
       panel.style.flex = `0 0 ${newW}px`;
       const sib = panels.find(p => p !== panel);
       if(sib) sib.style.flex = `0 0 ${sibW}px`;
     }
   });
-
   document.addEventListener('mouseup', ()=>{
     if(!panel) return;
     panel=null; dir='';
