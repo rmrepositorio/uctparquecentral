@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Incidencias — Control Tráfico</title>
+<title>Incidencias — Control Tráfico - Parque Central</title>
 
 <!-- Usar el mismo style.css que index.html -->
 <link rel="stylesheet" href="style.css">
@@ -22,6 +22,11 @@
 .btn-nav{font-size:.75em;color:var(--text-muted);border:1px solid var(--border);background:transparent;
   border-radius:6px;padding:5px 12px;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;}
 .btn-nav:hover{color:var(--accent);border-color:var(--accent);}
+
+/* Botón modo claro/oscuro */
+.btn-modo{font-size:.75em;color:var(--text-muted);border:1px solid var(--border);background:var(--btn-bg);
+  border-radius:6px;padding:5px 12px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Inter',sans-serif;}
+.btn-modo:hover{color:var(--accent);border-color:var(--accent);background:var(--btn-hover);color:var(--btn-hover-text);}
 
 /* ── FILTROS ── */
 .filtros-wrap{padding:16px 24px 0;display:flex;flex-direction:column;gap:10px;}
@@ -161,6 +166,7 @@ tbody tr:first-child td{padding-top:14px;}
   <span class="topbar-title">Incidencias</span>
   <div class="topbar-right">
     <span class="chip" id="chipTotal">Cargando...</span>
+    <button class="btn-modo" id="btnModo">☀ Modo claro</button>
     <a href="index.html" class="btn-nav">← Dashboard</a>
   </div>
 </div>
@@ -199,6 +205,20 @@ tbody tr:first-child td{padding-top:14px;}
 <div class="pagination" id="pagination"></div>
 
 <script>
+// ── Modo claro/oscuro ──
+let modoOscuro = localStorage.getItem('incidencias_modo') !== 'light';
+function actualizarModo() {
+  document.body.classList.toggle('light-mode', !modoOscuro);
+  document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+  localStorage.setItem('incidencias_modo', modoOscuro ? 'dark' : 'light');
+}
+document.getElementById('btnModo').addEventListener('click', () => {
+  modoOscuro = !modoOscuro;
+  actualizarModo();
+});
+// Inicializar modo al cargar
+actualizarModo();
+
 // ── Columnas tabla ──
 const COLS = [
   {key:'FECHA AVISO',   label:'Fecha',        render: r=>`<span class="td-date">${r['FECHA AVISO']||'—'}</span>`},
@@ -571,9 +591,6 @@ function limpiarFiltros() {
 }
 
 document.getElementById('busqueda').addEventListener('input', aplicarFiltros);
-
-// Calcular offset del header sticky dinámicamente
-
 document.getElementById('filtFechaIni').addEventListener('input', aplicarFiltros);
 document.getElementById('filtFechaFin').addEventListener('input', aplicarFiltros);
 </script>
