@@ -31,7 +31,7 @@ function getSubfamiliaLateral(vhlo) {
   if (n >= 1135 && n <= 1138) return 'FARID NUEVOS';
   if (n >= 1130 && n <= 1334) return 'OMB';
   if (n >= 3100 && n <= 3123) return 'WASTERRENT';
-  if (n >= 1121 && m <= 1128) return 'AMS';
+  if (n >= 1121 && n <= 1128) return 'AMS';
   return null;
 }
 function genColores(n){ return Array.from({length:n},(_,i)=>PALETA[i%PALETA.length]); }
