@@ -7,59 +7,30 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- ✅ SDK de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <link rel="stylesheet" href="style.css">
 <style>
 /* Stats */
-.stats-row {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
+.stats-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
 .stat-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  padding: 14px 20px;
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  min-width: 160px;
+  background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  padding: 14px 20px; border-radius: 8px; box-shadow: var(--shadow); min-width: 160px;
 }
-.stat-label {
-  font-size: 0.85em;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-.stat-value {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 1.6em;
-  font-weight: 700;
-  color: var(--accent);
-}
+.stat-label { font-size: 0.85em; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value { font-family: 'Rajdhani', sans-serif; font-size: 1.6em; font-weight: 700; color: var(--accent); }
 
 /* Tabla resumen */
 .table-container {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-  overflow-x: auto;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; box-shadow: var(--shadow); overflow-x: auto;
 }
-#tablaResumen {
-  width: 100% !important;
-}
-#tablaResumen th {
-  white-space: nowrap;
-  font-size: 0.85em;
-}
-#tablaResumen td {
-  text-align: center;
-}
-#tablaResumen td:first-child {
-  text-align: left;
-  font-weight: 600;
-}
+#tablaResumen { width: 100% !important; }
+#tablaResumen th { white-space: nowrap; font-size: 0.85em; }
+#tablaResumen td { text-align: center; }
+#tablaResumen td:first-child { text-align: left; font-weight: 600; }
 .cell-zero { color: var(--text-muted); opacity: 0.5; }
 .cell-low { color: var(--text); }
 .cell-medium { color: #ffd166; font-weight: 600; }
@@ -68,52 +39,27 @@
 /* Dropdowns filtros */
 .dropdown { position: relative; display: inline-block; }
 .dd-panel {
-  display: none;
-  position: absolute;
-  z-index: 9999;
-  top: calc(100% + 6px);
-  left: 0;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.45);
-  width: 260px;
-  padding: 10px;
-  font-size: 12px;
+  display: none; position: absolute; z-index: 9999; top: calc(100% + 6px); left: 0;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.45); width: 260px; padding: 10px; font-size: 12px;
 }
 .dd-panel.open { display: block; }
 .dd-title {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--accent);
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--accent);
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
 }
 .dd-barra { display: flex; gap: 6px; margin-bottom: 8px; }
 .dd-barra button { flex: 1; font-size: 11px; padding: 4px 0; }
 .dd-search {
-  width: 100%;
-  background: var(--input-bg, var(--bg3));
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 5px 8px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  box-sizing: border-box;
+  width: 100%; background: var(--input-bg, var(--bg3)); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px;
+  margin-bottom: 8px; font-size: 12px; box-sizing: border-box;
 }
 .dd-search:focus { outline: none; border-color: var(--accent); }
 .dd-list { max-height: 260px; overflow-y: auto; }
 .dd-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 4px;
-  border-radius: 4px;
-  color: var(--text);
-  cursor: pointer;
+  display: flex; align-items: center; gap: 8px; padding: 3px 4px;
+  border-radius: 4px; color: var(--text); cursor: pointer;
 }
 .dd-row:hover { background: var(--bg3); }
 .dd-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
@@ -121,14 +67,8 @@
 
 /* Link volver */
 .back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent);
-  text-decoration: none;
-  font-size: 0.9em;
-  margin-bottom: 14px;
-  transition: opacity 0.2s;
+  display: inline-flex; align-items: center; gap: 6px; color: var(--accent);
+  text-decoration: none; font-size: 0.9em; margin-bottom: 14px; transition: opacity 0.2s;
 }
 .back-link:hover { opacity: 0.7; }
 </style>
@@ -198,9 +138,14 @@
   <table id="tablaResumen" class="display" width="100%"></table>
 </div>
 
+<!-- ✅ Configuración de Supabase -->
+<script src="supabase-config.js"></script>
+
 <script>
-// Estado
-let modoOscuro = true;
+// ═══════════════════════════════════════════════════════════════
+// ✅ CORRECCIÓN: Leer el modo de localStorage como el resto de páginas
+// ═══════════════════════════════════════════════════════════════
+let modoOscuro = localStorage.getItem('ct_modo') !== 'light';
 let allData = [];
 let familias = [];
 let tablaDT = null;
@@ -208,20 +153,35 @@ let todosVehiculos = [];          // lista completa de VHLO
 let vehiculosSel = new Set();     // VHLO seleccionados (vacío = todos)
 let ordenAleatorio = false;       // si la tabla está en modo aleatorio
 
-// Modo claro/oscuro
+// Aplicar modo al cargar la página
+if (!modoOscuro) document.body.classList.add('light-mode');
+document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+
+// Evento de cambio de modo
 document.getElementById('toggleModo').addEventListener('click', () => {
   modoOscuro = !modoOscuro;
   document.body.classList.toggle('light-mode', !modoOscuro);
   document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+  // ✅ CORRECCIÓN: Guardar la preferencia en localStorage
+  localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
   if (tablaDT) tablaDT.draw(false);
 });
 
-// Cargar datos
-fetch('resumen_full.json')
-  .then(r => r.json())
-  .then(data => {
-    // Normalizar y parsear fechas
-    data.forEach(d => {
+// Cargar datos desde Supabase
+async function cargarDatos() {
+  try {
+    const { data, error } = await supabaseClient.from('incidencias').select('*');
+    if (error) throw error;
+
+    // Mapear los nombres de Supabase (snake_case) a los que espera el código original
+    const mappedData = data.map(d => ({
+      'FAMILIA AVERIA': d.familia_averia || '',
+      'VHLO': d.vhlo || '',
+      'FECHA AVISO': d.fecha_aviso || ''
+    }));
+
+    // Normalizar y parsear fechas (lógica original intacta)
+    mappedData.forEach(d => {
       if (d['FAMILIA AVERIA']) {
         d['FAMILIA AVERIA'] = d['FAMILIA AVERIA'].toString().trim().toUpperCase();
       }
@@ -239,7 +199,7 @@ fetch('resumen_full.json')
       } catch (e) {}
     });
 
-    allData = data.filter(d => d.fechaJS && d.VHLO && d['FAMILIA AVERIA']);
+    allData = mappedData.filter(d => d.fechaJS && d.VHLO && d['FAMILIA AVERIA']);
 
     // Obtener familias únicas
     familias = [...new Set(allData.map(d => d['FAMILIA AVERIA']))].filter(f => f && f !== '****').sort();
@@ -259,8 +219,11 @@ fetch('resumen_full.json')
     construirPanelVehiculos();
     initControles();
     updateTable();
-  })
-  .catch(e => console.error('Error cargando JSON:', e));
+  } catch (e) {
+    console.error('Error cargando datos desde Supabase:', e);
+    alert('Error al cargar datos: ' + e.message);
+  }
+}
 
 // Inicializar fechas
 function inicializarFechas() {
@@ -496,6 +459,9 @@ function initControles() {
     }
   });
 }
+
+// Iniciar carga de datos
+cargarDatos();
 </script>
 </body>
 </html>

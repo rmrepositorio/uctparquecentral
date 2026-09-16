@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Importar JSON Directo a Supabase</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .container { max-width: 700px; margin: 40px auto; padding: 24px; }
+  .panel { background: var(--chart-bg); border: 1px solid var(--chart-border); border-radius: 12px; padding: 32px; }
+  h1 { color: var(--text); margin-bottom: 20px; }
+  .drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 48px; text-align: center; cursor: pointer; position: relative; background: var(--bg2); }
+  .drop-zone:hover { border-color: var(--accent); }
+  .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .log { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin-top: 16px; }
+  .log-line { margin-bottom: 4px; }
+  .log-line.ok { color: var(--accent); }
+  .log-line.err { color: var(--accent4); }
+  .log-line.info { color: var(--accent3); }
+  .btn { padding: 12px 24px; border-radius: 8px; cursor: pointer; border: none; font-size: 14px; font-weight: 600; margin-top: 16px; }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .progress { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 16px; }
+  .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .stat { background: var(--bg3); padding: 16px; border-radius: 8px; text-align: center; }
+  .stat-val { font-size: 2em; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.8em; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="panel">
+    <h1>📥 Importar JSON Directo a Supabase</h1>
+    <p style="color:var(--text-muted); margin-bottom:20px;">
+      Importa TODOS los registros del JSON sin filtros. Normaliza automáticamente claves y valores.
+    </p>
+    
+    <div class="drop-zone" id="dropZone">
+      <div style="font-size:3em;">📂</div>
+      <div style="font-size:1.3em; font-weight:700; margin:8px 0;">Arrastra tu JSON aquí</div>
+      <div style="color:var(--text-muted);">O haz clic para seleccionar</div>
+      <input type="file" id="fileInput" accept=".json">
+    </div>
+
+    <div class="stats hidden" id="stats">
+      <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total en JSON</div></div>
+      <div class="stat"><div class="stat-val" id="statImportados">0</div><div class="stat-label">Importados</div></div>
+      <div class="stat"><div class="stat-val" id="statErrores">0</div><div class="stat-label">Errores</div></div>
+    </div>
+
+    <div class="progress hidden" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="log hidden" id="logBox"></div>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+const MAPEO_CLAVES = {
+  'FAMILIA': 'familia', 'VHLO': 'vhlo', 'CONDUCTOR': 'conductor',
+  'FAMILIA AVERIA': 'familia_averia', 'DEFICIENCIAS DETECTADAS': 'deficiencias',
+  'DESCRIPCION AVERIA': 'descripcion_averia', 'FOTO': 'foto',
+  'FECHA AVISO': 'fecha_aviso', 'HORA': 'hora', 'TURNO': 'turno',
+  'N AVISO': 'n_aviso', 'AVISO ANTIGUO': 'aviso_antiguo',
+  'ORIGEN AVISO': 'origen_aviso', 'TIPO ORDEN': 'tipo_orden',
+  'COLUMNA1': 'columna1', 'COLUMNA2': 'columna2', 'COLUMNA3': 'columna3', 'COLUMNA4': 'columna4'
+};
+
+function normalizarClave(nombre) {
+  let n = nombre.toString().trim().toUpperCase()
+    .replace(/[¿?]/g, '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return MAPEO_CLAVES[n] || null;
+}
+
+function normalizarFila(fila) {
+  const resultado = {};
+  for (const key in fila) {
+    const keySup = normalizarClave(key);
+    if (keySup) {
+      let valor = fila[key];
+      if (typeof valor === 'string') valor = valor.trim();
+      if (valor === '' || valor === ' ') valor = null;
+      resultado[keySup] = valor;
+    }
+  }
+  return resultado;
+}
+
+function log(msg, tipo = 'info') {
+  const logBox = document.getElementById('logBox');
+  logBox.classList.remove('hidden');
+  const linea = document.createElement('div');
+  linea.className = `log-line ${tipo}`;
+  linea.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logBox.appendChild(linea);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '');
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.style.borderColor = '';
+  if (e.dataTransfer.files.length) importar(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) importar(e.target.files[0]);
+});
+
+async function importar(file) {
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('El JSON no es un array');
+      
+      log(`📊 JSON cargado: ${data.length} registros`, 'info');
+      document.getElementById('stats').classList.remove('hidden');
+      document.getElementById('progressBar').classList.remove('hidden');
+      document.getElementById('statTotal').textContent = data.length;
+      
+      // Normalizar TODAS las filas (sin filtrar ninguna)
+      const datosNormalizados = data.map(normalizarFila);
+      
+      // Opcional: quitar la primera fila si está completamente vacía
+      const primeraFila = datosNormalizados[0];
+      const tieneDatos = Object.values(primeraFila).some(v => v !== null && v !== undefined);
+      const datosFinales = tieneDatos ? datosNormalizados : datosNormalizados.slice(1);
+      
+      log(`✅ ${datosFinales.length} registros listos para importar`, 'ok');
+      
+      // Insertar en lotes de 100
+      const LOTE = 100;
+      let importados = 0;
+      let errores = 0;
+      const totalLotes = Math.ceil(datosFinales.length / LOTE);
+      
+      for (let i = 0; i < datosFinales.length; i += LOTE) {
+        const lote = datosFinales.slice(i, i + LOTE);
+        const numLote = Math.floor(i / LOTE) + 1;
+        
+        log(`📤 Lote ${numLote}/${totalLotes}...`, 'info');
+        
+        try {
+          const { error } = await supabaseClient.from('incidencias').insert(lote);
+          if (error) {
+            log(`❌ Error en lote ${numLote}: ${error.message}`, 'err');
+            errores += lote.length;
+          } else {
+            importados += lote.length;
+            log(`✅ Lote ${numLote} completado`, 'ok');
+          }
+        } catch (err) {
+          log(`❌ Error en lote ${numLote}: ${err.message}`, 'err');
+          errores += lote.length;
+        }
+        
+        const pct = Math.round(((i + lote.length) / datosFinales.length) * 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('statImportados').textContent = importados;
+        document.getElementById('statErrores').textContent = errores;
+      }
+      
+      log(`🎉 ¡COMPLETADO! ${importados} importados, ${errores} errores`, 'ok');
+      
+    } catch (err) {
+      log(`❌ ERROR: ${err.message}`, 'err');
+    }
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>

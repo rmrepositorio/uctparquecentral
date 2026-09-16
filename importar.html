@@ -4,49 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Importar Datos — Control Tráfico</title>
+
+<!-- SheetJS para Excel/CSV -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<!-- Usar el mismo style.css que index.html -->
-<link rel="stylesheet" href="style.css">
+<!-- ✅ SDK de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Fuente monoespaciada para el log -->
+<!-- Estilos generales -->
+<link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
 
-<!-- Estilos específicos mínimos para importar.html usando las variables de style.css -->
+<!-- Estilos específicos -->
 <style>
 body{padding:0;}
-
-/* ── HEADER ── */
 .header{
   background:var(--bg2);border-bottom:1px solid var(--border);
   padding:18px 32px;display:flex;align-items:center;gap:16px;
 }
 .header-logo{font-family:'Inter',sans-serif;font-size:1.4em;font-weight:700;color:var(--accent);letter-spacing:1px;}
-.header-sub{color:var(--text-muted);font-size:.85em;margin-left:auto;}
-.btn-back{
+.btn-back, .btn-modo{
   background:var(--btn-bg);border:1px solid var(--border);color:var(--btn-text);
   padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;
   text-decoration:none;display:inline-flex;align-items:center;gap:6px;
   transition:all .2s;font-family:'Inter',sans-serif;
 }
-.btn-back:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-
-/* Botón modo claro/oscuro */
-.btn-modo{
-  background:var(--btn-bg);border:1px solid var(--border);color:var(--btn-text);
-  padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;
-  transition:all .2s;font-family:'Inter',sans-serif;
-}
-.btn-modo:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-
+.btn-back:hover, .btn-modo:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
 .container{max-width:1100px;margin:0 auto;padding:32px;}
-
-/* ── STEPS ── */
 .steps{display:flex;gap:0;margin-bottom:40px;}
 .step{
   flex:1;padding:14px 20px;background:var(--bg2);border:1px solid var(--border);
-  position:relative;font-size:.8em;color:var(--text-muted);
-  transition:all .3s;font-family:'Inter',sans-serif;
+  position:relative;font-size:.8em;color:var(--text-muted);transition:all .3s;font-family:'Inter',sans-serif;
 }
 .step:first-child{border-radius:8px 0 0 8px;}
 .step:last-child{border-radius:0 8px 8px 0;}
@@ -54,47 +42,36 @@ body{padding:0;}
 .step.done{border-color:var(--accent);color:var(--accent);}
 .step-num{
   display:inline-flex;align-items:center;justify-content:center;
-  width:22px;height:22px;border-radius:50%;
-  background:var(--border);color:var(--text-muted);
-  font-family:'Inter',sans-serif;font-weight:700;font-size:1em;
-  margin-right:8px;transition:all .3s;
+  width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--text-muted);
+  font-family:'Inter',sans-serif;font-weight:700;font-size:1em;margin-right:8px;transition:all .3s;
 }
 .step.active .step-num{background:var(--accent);color:var(--bg);}
 .step.done .step-num{background:var(--accent);color:var(--bg);}
 .step.done .step-num::before{content:'✓';}
 .step.done .step-num-inner{display:none;}
-
-/* ── ZONE (drop zones) ── */
 .zone{
   background:var(--bg2);border:2px dashed var(--border);border-radius:12px;
-  padding:48px 32px;text-align:center;transition:all .3s;cursor:pointer;
-  position:relative;
+  padding:48px 32px;text-align:center;transition:all .3s;cursor:pointer;position:relative;
 }
 .zone:hover,.zone.drag-over{border-color:var(--accent);background:var(--bg3);}
 .zone-icon{font-size:3em;margin-bottom:16px;display:block;}
 .zone-title{font-family:'Inter',sans-serif;font-size:1.4em;font-weight:700;color:var(--text);margin-bottom:8px;}
 .zone-sub{color:var(--text-muted);font-size:.85em;margin-bottom:24px;}
 .zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-
-/* ── BOTONES ── */
 .btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:10px 24px;border-radius:8px;font-size:13px;font-weight:500;
-  cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif;
+  display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;
+  font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif;
 }
 .btn-primary{background:var(--accent);color:var(--bg);}
 .btn-primary:hover{opacity:.85;transform:translateY(-1px);}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .btn-secondary{background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--border);}
 .btn-secondary:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-.btn-danger{background:var(--accent4);color:#fff;}
-.btn-danger:hover{opacity:.85;}
-
-/* ── INFO CARDS ── */
+.btn-success{background:var(--accent7);color:white;}
+.btn-success:hover{opacity:.85;transform:translateY(-1px);}
+.btn-success:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0;}
-.info-card{
-  background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;
-}
+.info-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;}
 .info-card:nth-child(1){border-left:3px solid var(--kpi-value-1);}
 .info-card:nth-child(1) .info-card-val{color:var(--kpi-value-1);}
 .info-card:nth-child(2){border-left:3px solid var(--kpi-value-3);}
@@ -103,23 +80,18 @@ body{padding:0;}
 .info-card:nth-child(3) .info-card-val{color:var(--kpi-value-2);}
 .info-card-label{font-size:.75em;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-family:'Inter',sans-serif;font-weight:500;}
 .info-card-val{font-family:'Inter',sans-serif;font-size:1.6em;font-weight:700;}
-
-/* ── PREVIEW TABLE ── */
 .table-wrap{overflow:auto;border-radius:8px;border:1px solid var(--border);margin:20px 0;max-height:360px;}
 table.preview{width:100%;border-collapse:collapse;font-size:.78em;}
 table.preview th{
   background:var(--table-header);color:var(--text-muted);padding:8px 12px;
-  font-family:'Inter',sans-serif;font-weight:600;font-size:.95em;
-  text-align:left;position:sticky;top:0;border-bottom:2px solid var(--accent);
-  white-space:nowrap;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:.95em;text-align:left;
+  position:sticky;top:0;border-bottom:2px solid var(--accent);white-space:nowrap;
 }
 table.preview td{padding:6px 12px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;}
 table.preview tr:hover td{background:var(--bg3);}
 table.preview tr.dup td{background:rgba(239,68,68,.08);}
 table.preview tr.dup td:first-child{border-left:3px solid var(--accent4);}
 table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
-
-/* ── LOG ── */
 .log{
   background:var(--bg);border:1px solid var(--border);border-radius:8px;
   padding:16px;font-family:'JetBrains Mono',monospace;font-size:.78em;
@@ -129,8 +101,6 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
 .log-line.ok{color:var(--accent);}
 .log-line.warn{color:var(--accent2);}
 .log-line.err{color:var(--accent4);}
-
-/* ── OPTIONS ── */
 .options{display:flex;gap:16px;margin:20px 0;flex-wrap:wrap;}
 .opt{
   flex:1;background:var(--bg3);border:2px solid var(--border);border-radius:10px;
@@ -140,24 +110,17 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
 .opt.selected{border-color:var(--accent);background:rgba(20,184,166,.1);}
 .opt-title{font-family:'Inter',sans-serif;font-weight:700;font-size:1.05em;margin-bottom:4px;color:var(--text);}
 .opt-desc{font-size:.8em;color:var(--text-muted);}
-
-/* ── PROGRESS ── */
 .progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:12px 0;}
 .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
-
 .section-title{
   font-family:'Inter',sans-serif;font-size:1.1em;font-weight:700;
   color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;
   margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);
 }
-
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75em;font-weight:600;font-family:'Inter',sans-serif;}
 .badge-new{background:rgba(20,184,166,.15);color:var(--accent);}
 .badge-dup{background:rgba(239,68,68,.15);color:var(--accent4);}
-
 .hidden{display:none!important;}
-
-/* ── DOWNLOAD BOX ── */
 .download-box{
   background:linear-gradient(135deg,rgba(20,184,166,.1),rgba(139,92,246,.1));
   border:1px solid var(--accent);border-radius:12px;
@@ -165,14 +128,12 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
 }
 .download-box h3{font-family:'Inter',sans-serif;font-size:1.4em;color:var(--accent);margin-bottom:8px;}
 .download-box p{color:var(--text-muted);font-size:.85em;margin-bottom:20px;}
-
-/* ── WARNING ── */
 .dup-warning{
   background:rgba(239,68,68,.1);border:1px solid var(--accent4);border-radius:8px;
   padding:12px 16px;margin:12px 0;font-size:.85em;color:var(--accent4);
 }
-
-@media(max-width:768px){
+.seccion-destino { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+@media (max-width: 768px) { 
   .container{padding:16px;}
   .header{padding:12px 16px;flex-wrap:wrap;}
   .info-grid{grid-template-columns:1fr;}
@@ -181,6 +142,7 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
   .step{border-radius:0!important;}
   .step:first-child{border-radius:8px 8px 0 0!important;}
   .step:last-child{border-radius:0 0 8px 8px!important;}
+  .seccion-destino { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -201,24 +163,24 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
     <div class="step active" id="step1"><span class="step-num"><span class="step-num-inner">1</span></span>Subir archivo</div>
     <div class="step" id="step2"><span class="step-num"><span class="step-num-inner">2</span></span>Revisar datos</div>
     <div class="step" id="step3"><span class="step-num"><span class="step-num-inner">3</span></span>Combinar</div>
-    <div class="step" id="step4"><span class="step-num"><span class="step-num-inner">4</span></span>Descargar JSON</div>
+    <div class="step" id="step4"><span class="step-num"><span class="step-num-inner">4</span></span>Descargar / Subir</div>
   </div>
 
   <!-- PASO 1: Subir archivo -->
   <div id="panel1">
-    <p class="section-title">Paso 2 — Subir Excel o CSV (PREFERIDO) //Subir antes JSON actual más abajo//</p>
+    <p class="section-title">Paso 1 — Subir Excel o CSV</p>
     <div class="zone" id="dropZone">
       <span class="zone-icon">📂</span>
       <div class="zone-title">Arrastra tu archivo aquí</div>
-      <div class="zone-sub">O haz clic para seleccionarlo · Formatos: <strong>.xlsx · .xls · .csv (PREFERIDO)</strong></div>
+      <div class="zone-sub">O haz clic para seleccionarlo · Formatos: <strong>.xlsx · .xls · .csv</strong></div>
       <button class="btn btn-primary" style="position:relative;z-index:2;pointer-events:none;">Seleccionar archivo</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
     </div>
 
-    <p class="section-title" style="margin-top:32px;">Paso 1- Subir JSON actual (opcional)</p>
+    <p class="section-title" style="margin-top:32px;">Paso 2 — Subir JSON actual (opcional)</p>
     <div class="zone" id="dropZoneJson" style="padding:24px 32px;">
       <span style="font-size:1.5em;display:block;margin-bottom:8px;">📄</span>
-      <div class="zone-title" style="font-size:1.1em;">resumen_full.json <span style="color:var(--text-muted);font-weight:400;font-size:.8em;">(opcional — para fusionar con datos existentes)</span></div>
+      <div class="zone-title" style="font-size:1.1em;">resumen_full.json <span style="color:var(--text-muted);font-weight:400;font-size:.8em;">(opcional — para fusionar)</span></div>
       <div class="zone-sub">Si no lo subes, el JSON descargado contendrá solo los datos nuevos</div>
       <input type="file" id="jsonInput" accept=".json">
     </div>
@@ -278,19 +240,77 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
     <div class="progress-bar" style="margin-top:16px;"><div class="progress-fill" id="progressFill3" style="width:0%"></div></div>
   </div>
 
-  <!-- PASO 4: Descargar -->
+  <!-- PASO 4: Descargar y Subir -->
   <div id="panel4" class="hidden">
     <div class="download-box">
-      <h3>✅ JSON generado correctamente</h3>
-      <p id="downloadSummary">Listo para descargar</p>
-      <button class="btn btn-primary" id="btnDownload" style="font-size:1em;padding:14px 32px;" onclick="descargarJSON()">
-        ⬇ Descargar resumen_full.json
-      </button>
+      <h3>✅ Datos procesados correctamente</h3>
+      <p id="downloadSummary">Listo para descargar o subir</p>
+      
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;">
+        <button class="btn btn-primary" style="font-size:1em;padding:14px 32px;" onclick="descargarJSON()">
+          ⬇ Descargar resumen_full.json
+        </button>
+      </div>
     </div>
 
-    <div class="log" id="logFinal"></div>
+    <!-- Sección de destinos de subida -->
+    <div class="seccion-destino">
+      
+      <!-- SUPABASE -->
+      <div class="destino-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px;">
+        <h3 style="font-size:14px; margin-bottom:12px; color:var(--text); display:flex; align-items:center; gap:8px;">
+          🗄️ Base de datos <span class="badge" style="font-size:10px; padding:2px 8px; border-radius:10px; background:var(--bg3); color:var(--text-muted);">Supabase</span>
+        </h3>
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+          Sube los datos directamente a la base de datos en la nube. Se verán al instante en el dashboard.
+        </p>
+        <button class="btn btn-success" id="btnSubirSupabase" style="width:100%; margin-bottom:12px;" onclick="subirASupabase()">
+          🚀 Subir a Supabase
+        </button>
+        <div id="supabaseSection" class="hidden">
+          <div class="log" id="supabaseLog" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace; font-size:11px; max-height:150px; overflow-y:auto; color:var(--text-muted);"></div>
+          <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" id="supabaseProgress" style="width:0%"></div></div>
+        </div>
+      </div>
 
-    <div style="display:flex;gap:12px;margin-top:20px;">
+      <!-- GITHUB -->
+      <div class="destino-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:18px;">
+        <h3 style="font-size:14px; margin-bottom:12px; color:var(--text); display:flex; align-items:center; gap:8px;">
+          🐙 Archivo JSON <span class="badge" style="font-size:10px; padding:2px 8px; border-radius:10px; background:var(--bg3); color:var(--text-muted);">GitHub</span>
+        </h3>
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+          Sube el JSON generado a tu repositorio de GitHub.
+        </p>
+        
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label style="font-size:11px; color:var(--text-muted); min-width:100px;">Repositorio:</label>
+            <input type="text" id="ghRepo" placeholder="usuario/repo" style="flex:1; background:var(--input-bg); color:var(--input-text); border:1px solid var(--input-border); padding:6px 10px; border-radius:6px; font-size:12px;">
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label style="font-size:11px; color:var(--text-muted); min-width:100px;">Ruta:</label>
+            <input type="text" id="ghPath" value="resumen_full.json" placeholder="resumen_full.json" style="flex:1; background:var(--input-bg); color:var(--input-text); border:1px solid var(--input-border); padding:6px 10px; border-radius:6px; font-size:12px;">
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label style="font-size:11px; color:var(--text-muted); min-width:100px;">🔐 Token:</label>
+            <input type="password" id="ghToken" placeholder="ghp_xxxx" style="flex:1; background:var(--input-bg); color:var(--input-text); border:1px solid var(--input-border); padding:6px 10px; border-radius:6px; font-size:12px;">
+            <button class="btn btn-secondary" id="btnVerToken" style="padding:6px 10px; font-size:11px;">👁</button>
+          </div>
+          <label style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="chkRecordar"> Recordar token en este navegador
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" id="btnSubirGitHub" style="flex:1;" onclick="subirAGitHub()">📤 Subir a GitHub</button>
+          <button class="btn btn-secondary" id="btnProbarConexion" style="flex:1;" onclick="probarConexionGitHub()">🔌 Probar</button>
+        </div>
+        <div class="log hidden" id="githubLog" style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace; font-size:11px; max-height:150px; overflow-y:auto; color:var(--text-muted); margin-top:12px;"></div>
+      </div>
+
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;">
       <button class="btn btn-secondary" onclick="reiniciar()">↺ Importar otro archivo</button>
       <a href="index.html" class="btn btn-primary">→ Ir al dashboard</a>
     </div>
@@ -298,35 +318,49 @@ table.preview tr.new td:first-child{border-left:3px solid var(--accent);}
 
 </div>
 
+<!-- CONFIGURACIÓN SUPABASE -->
+<script src="supabase-config.js"></script>
+
 <script>
-// ── Modo claro/oscuro ──
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURACIÓN Y ESTADO
+// ═══════════════════════════════════════════════════════════════
 let modoOscuro = localStorage.getItem('importar_modo') !== 'light';
+let datosExcel = [], datosJson = [], datosFinal = [], modoFusion = 'merge';
+
+const CAMPOS = ['FAMILIA','VHLO','CONDUCTOR','FAMILIA AVERIA','DEFICIENCIAS DETECTADAS',
+  'DESCRIPCION AVERIA','FOTO','FECHA AVISO','HORA','TURNO','Nº AVISO',
+  'AVISO ANTIGUO?','ORIGEN AVISO','TIPO ORDEN'];
+
+// Mapeo a Supabase
+const MAPEO_SUPABASE = {
+  'FAMILIA': 'familia', 'VHLO': 'vhlo', 'CONDUCTOR': 'conductor',
+  'FAMILIA AVERIA': 'familia_averia', 'DEFICIENCIAS DETECTADAS': 'deficiencias',
+  'DESCRIPCION AVERIA': 'descripcion_averia', 'FOTO': 'foto',
+  'FECHA AVISO': 'fecha_aviso', 'HORA': 'hora', 'TURNO': 'turno',
+  'Nº AVISO': 'n_aviso', 'N AVISO': 'n_aviso',
+  'AVISO ANTIGUO?': 'aviso_antiguo', 'AVISO ANTIGUO': 'aviso_antiguo',
+  'ORIGEN AVISO': 'origen_aviso', 'TIPO ORDEN': 'tipo_orden',
+  'COLUMNA1': 'columna1', 'COLUMNA2': 'columna2', 'COLUMNA3': 'columna3', 'COLUMNA4': 'columna4'
+};
+
 function actualizarModo() {
   document.body.classList.toggle('light-mode', !modoOscuro);
   document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
   localStorage.setItem('importar_modo', modoOscuro ? 'dark' : 'light');
 }
-document.getElementById('btnModo').addEventListener('click', () => {
-  modoOscuro = !modoOscuro;
-  actualizarModo();
-});
+document.getElementById('btnModo').addEventListener('click', () => { modoOscuro = !modoOscuro; actualizarModo(); });
 actualizarModo();
 
-// ── Lógica original ──
-const CAMPOS = ['FAMILIA','VHLO','CONDUCTOR','FAMILIA AVERIA','DEFICIENCIAS DETECTADAS',
-  'DESCRIPCION AVERIA','FOTO','FECHA AVISO','HORA','TURNO','Nº AVISO',
-  'AVISO ANTIGUO?','ORIGEN AVISO','TIPO ORDEN'];
-
-let datosExcel = [], datosJson = [], datosFinal = [], modoFusion = 'merge';
-
-// ── Drag & drop zona Excel ──
+// ═══════════════════════════════════════════════════════════════
+// DRAG & DROP Y LECTURA DE ARCHIVOS
+// ═══════════════════════════════════════════════════════════════
 const dropZone = document.getElementById('dropZone');
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
 document.getElementById('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
 
-// ── Drag & drop zona JSON ──
 const dropZoneJson = document.getElementById('dropZoneJson');
 dropZoneJson.addEventListener('dragover', e => { e.preventDefault(); dropZoneJson.classList.add('drag-over'); });
 dropZoneJson.addEventListener('dragleave', () => dropZoneJson.classList.remove('drag-over'));
@@ -395,11 +429,16 @@ function normalizarDatos(rows) {
         campo.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim()
       );
       let val = key ? row[key] : '';
-      if (campo === 'FECHA AVISO' && val) {
-        val = normalizarFecha(val);
-      }
-      if (campo === 'Nº AVISO' && val) val = val.toString().trim();
+      if (campo === 'FECHA AVISO' && val) val = normalizarFecha(val);
+      if ((campo === 'Nº AVISO' || campo === 'N AVISO') && val) val = val.toString().trim();
       obj[campo] = val !== undefined && val !== null ? val.toString().trim() : '';
+    });
+    // Capturar columnas extra (ej. Columna1, Columna2...)
+    Object.keys(row).forEach(k => {
+       const kNorm = k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();
+       if (!CAMPOS.some(c => c.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim() === kNorm)) {
+           obj[k] = row[k];
+       }
     });
     return obj;
   }).filter(r => r['VHLO'] && r['VHLO'] !== '');
@@ -419,10 +458,11 @@ function normalizarFecha(val) {
 }
 
 function mostrarPrevisualizacion(filename) {
-  const avisosJson = new Set(datosJson.map(r => r['Nº AVISO'] ? r['Nº AVISO'].toString().trim() : '').filter(Boolean));
+  const avisosJson = new Set(datosJson.map(r => (r['Nº AVISO'] || r['N AVISO'] || '').toString().trim()).filter(Boolean));
   let dups = 0;
   datosExcel.forEach(r => {
-    if (r['Nº AVISO'] && avisosJson.has(r['Nº AVISO'].toString().trim())) dups++;
+    const nav = (r['Nº AVISO'] || r['N AVISO'] || '').toString().trim();
+    if (nav && avisosJson.has(nav)) dups++;
   });
   const nuevos = datosExcel.length - dups;
 
@@ -442,7 +482,8 @@ function mostrarPrevisualizacion(filename) {
   body.innerHTML = '';
 
   datosExcel.slice(0, 50).forEach(row => {
-    const isDup = row['Nº AVISO'] && avisosJson.has(row['Nº AVISO'].toString().trim());
+    const nav = (row['Nº AVISO'] || row['N AVISO'] || '').toString().trim();
+    const isDup = nav && avisosJson.has(nav);
     const tr = document.createElement('tr');
     tr.className = isDup ? 'dup' : 'new';
     CAMPOS.forEach(c => {
@@ -460,6 +501,9 @@ function selOpt(modo) {
   document.getElementById('optReplace').classList.toggle('selected', modo === 'replace');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// COMBINAR DATOS
+// ═══════════════════════════════════════════════════════════════
 function combinar() {
   goStep(3);
   const log = document.getElementById('logBox');
@@ -483,8 +527,11 @@ function combinar() {
         addLog(`Modo reemplazar: ${datosFinal.length} registros totales.`, 'ok');
         prog.style.width = '80%';
       } else {
-        const avisosJson = new Set(datosJson.map(r => r['Nº AVISO'] ? r['Nº AVISO'].toString().trim() : '').filter(Boolean));
-        const nuevos = datosExcel.filter(r => !r['Nº AVISO'] || !avisosJson.has(r['Nº AVISO'].toString().trim()));
+        const avisosJson = new Set(datosJson.map(r => (r['Nº AVISO'] || r['N AVISO'] || '').toString().trim()).filter(Boolean));
+        const nuevos = datosExcel.filter(r => {
+          const nav = (r['Nº AVISO'] || r['N AVISO'] || '').toString().trim();
+          return !nav || !avisosJson.has(nav);
+        });
         const dups = datosExcel.length - nuevos.length;
         addLog(`JSON existente: ${datosJson.length} registros.`);
         addLog(`Nuevos registros a añadir: ${nuevos.length}.`);
@@ -498,15 +545,27 @@ function combinar() {
         prog.style.width = '100%';
         document.getElementById('downloadSummary').textContent =
           `${datosFinal.length.toLocaleString()} registros · Modo: ${modoFusion === 'merge' ? 'Fusionado' : 'Reemplazado'}`;
-        const logFinal = document.getElementById('logFinal');
-        logFinal.innerHTML = log.innerHTML;
+        
+        // Cargar credenciales de GitHub guardadas
+        const repoGuardado = localStorage.getItem('gh_repo');
+        const tokenGuardado = localStorage.getItem('gh_token');
+        if (repoGuardado) document.getElementById('ghRepo').value = repoGuardado;
+        if (tokenGuardado) {
+          document.getElementById('ghToken').value = tokenGuardado;
+          document.getElementById('chkRecordar').checked = true;
+        }
+
         setTimeout(() => goStep(4), 400);
       }, 600);
     }, 800);
   }, 100);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DESCARGAR JSON
+// ═══════════════════════════════════════════════════════════════
 function descargarJSON() {
+  if (datosFinal.length === 0) { alert('No hay datos para descargar'); return; }
   const json = JSON.stringify(datosFinal, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -515,6 +574,207 @@ function descargarJSON() {
   a.click(); URL.revokeObjectURL(url);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 🆕 SUBIR A SUPABASE
+// ═══════════════════════════════════════════════════════════════
+function convertirASupabase(fila) {
+  const resultado = {};
+  for (const key in fila) {
+    const keyUpper = key.toUpperCase().trim();
+    const supabaseKey = MAPEO_SUPABASE[keyUpper] || key.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    let valor = fila[key];
+    if (valor === '' || valor === null || valor === undefined) valor = null;
+    resultado[supabaseKey] = valor;
+  }
+  return resultado;
+}
+
+async function subirASupabase() {
+  if (datosFinal.length === 0) { alert('No hay datos para subir'); return; }
+  
+  const btn = document.getElementById('btnSubirSupabase');
+  btn.disabled = true;
+  btn.textContent = '⏳ Procesando...';
+  
+  const logBox = document.getElementById('supabaseLog');
+  const prog = document.getElementById('supabaseProgress');
+  document.getElementById('supabaseSection').classList.remove('hidden');
+  logBox.innerHTML = '';
+  
+  function addLogSupabase(msg, tipo='') {
+    const div = document.createElement('div');
+    div.className = 'log-line ' + tipo;
+    div.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+    logBox.appendChild(div);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+  
+  try {
+    addLogSupabase(`Iniciando subida a Supabase (modo: ${modoFusion === 'merge' ? 'Fusionar' : 'Reemplazar'})...`);
+    
+    let datosAInsertar = [];
+    
+    if (modoFusion === 'merge') {
+      addLogSupabase('Consultando Nº Aviso existentes en Supabase...', 'info');
+      const { data: existentes, error } = await supabaseClient.from('incidencias').select('n_aviso');
+      if (error) throw error;
+      
+      const avisosExistentes = new Set(
+        existentes.map(d => (d.n_aviso || '').toString().trim()).filter(v => v !== '')
+      );
+      addLogSupabase(`Encontrados ${avisosExistentes.size} Nº Aviso en Supabase`, 'info');
+      
+      datosAInsertar = datosFinal.filter(fila => {
+        const nav = (fila['Nº AVISO'] || fila['N AVISO'] || '').toString().trim();
+        return nav === '' || !avisosExistentes.has(nav);
+      });
+      
+      const duplicados = datosFinal.length - datosAInsertar.length;
+      addLogSupabase(`${datosAInsertar.length} registros nuevos, ${duplicados} duplicados (ignorados)`, 'info');
+    } else {
+      addLogSupabase('⚠️ Modo REEMPLAZAR: borrando todos los datos existentes...', 'warn');
+      const { error: errorDelete } = await supabaseClient.from('incidencias').delete().neq('id', 0);
+      if (errorDelete) throw errorDelete;
+      addLogSupabase('✅ Base de datos vaciada', 'ok');
+      datosAInsertar = [...datosFinal];
+    }
+    
+    if (datosAInsertar.length === 0) {
+      addLogSupabase('⚠️ No hay registros nuevos para insertar', 'warn');
+      btn.disabled = false;
+      btn.textContent = '🚀 Subir a Supabase';
+      return;
+    }
+    
+    const datosConvertidos = datosAInsertar.map(convertirASupabase);
+    addLogSupabase(`Insertando ${datosConvertidos.length} registros...`, 'info');
+    
+    const LOTE = 100;
+    let insertados = 0;
+    
+    for (let i = 0; i < datosConvertidos.length; i += LOTE) {
+      const lote = datosConvertidos.slice(i, i + LOTE);
+      const { data, error } = await supabaseClient.from('incidencias').insert(lote);
+      if (error) throw error;
+      
+      insertados += lote.length;
+      const pct = Math.round((insertados / datosConvertidos.length) * 100);
+      prog.style.width = pct + '%';
+      addLogSupabase(`  → Lote ${Math.floor(i/LOTE)+1}: ${lote.length} registros (${pct}%)`, 'ok');
+    }
+    
+    addLogSupabase(`✅ ¡Completado! ${insertados} registros subidos a Supabase`, 'ok');
+    
+  } catch (error) {
+    console.error('Error Supabase:', error);
+    addLogSupabase(`❌ ERROR: ${error.message}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Subir a Supabase';
+    setTimeout(() => { prog.style.width = '0%'; }, 2000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 SUBIR A GITHUB
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnVerToken').addEventListener('click', () => {
+  const input = document.getElementById('ghToken');
+  input.type = input.type === 'password' ? 'text' : 'password';
+});
+
+function probarConexionGitHub() {
+  const token = document.getElementById('ghToken').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  if (!token || !repo) { alert('⚠️ Completa token y repositorio'); return; }
+  
+  fetch(`https://api.github.com/repos/${repo}`, { headers: { 'Authorization': `token ${token}` } })
+    .then(res => {
+      if (res.ok) {
+        alert('✅ Conexión OK con GitHub');
+        addLogGitHub('Conexión verificada correctamente', 'ok');
+      } else {
+        alert('❌ Error: ' + res.status);
+        addLogGitHub(`Error ${res.status}: ${res.statusText}`, 'err');
+      }
+    })
+    .catch(e => {
+      alert('❌ Error de red');
+      addLogGitHub(`Error: ${e.message}`, 'err');
+    });
+}
+
+function addLogGitHub(msg, tipo='') {
+  const log = document.getElementById('githubLog');
+  log.classList.remove('hidden');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + tipo;
+  div.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function subirAGitHub() {
+  const token = document.getElementById('ghToken').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const path = document.getElementById('ghPath').value.trim() || 'resumen_full.json';
+  
+  if (!token || !repo) { alert('⚠️ Completa token y repositorio'); return; }
+  if (datosFinal.length === 0) { alert('⚠️ No hay datos para subir'); return; }
+  
+  if (document.getElementById('chkRecordar').checked) {
+    localStorage.setItem('gh_repo', repo);
+    localStorage.setItem('gh_token', token);
+  }
+  
+  addLogGitHub(`Subiendo ${datosFinal.length} registros a ${repo}/${path}...`, 'info');
+  
+  try {
+    let sha = null;
+    try {
+      const resGet = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      if (resGet.ok) {
+        const data = await resGet.json();
+        sha = data.sha;
+        addLogGitHub(`Archivo existe (SHA: ${sha.substring(0,7)}...). Actualizando.`, 'info');
+      }
+    } catch (e) {}
+    
+    const contenido = btoa(unescape(encodeURIComponent(JSON.stringify(datosFinal, null, 2))));
+    const body = {
+      message: `Actualizar datos - ${new Date().toLocaleString('es-ES')}`,
+      content: contenido,
+      ...(sha && { sha })
+    };
+    
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    if (res.ok) {
+      addLogGitHub(`✅ Subido correctamente a GitHub`, 'ok');
+      alert('✅ Subido a GitHub correctamente');
+    } else {
+      const err = await res.json();
+      addLogGitHub(`❌ Error: ${err.message}`, 'err');
+      alert('❌ Error al subir: ' + err.message);
+    }
+  } catch (e) {
+    addLogGitHub(`❌ Error: ${e.message}`, 'err');
+    alert('❌ Error de red: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGACIÓN Y UTILIDADES
+// ═══════════════════════════════════════════════════════════════
 function goStep(n) {
   [1,2,3,4].forEach(i => {
     document.getElementById('panel'+i).classList.toggle('hidden', i !== n);
@@ -531,10 +791,15 @@ function reiniciar() {
   document.getElementById('jsonInput').value='';
   document.getElementById('dupWarning').classList.add('hidden');
   document.getElementById('logBox').innerHTML='';
+  document.getElementById('supabaseLog').innerHTML='';
+  document.getElementById('githubLog').innerHTML='';
+  document.getElementById('supabaseSection').classList.add('hidden');
+  document.getElementById('githubLog').classList.add('hidden');
   document.getElementById('progressFill').style.width='0%';
   document.getElementById('progressFill3').style.width='0%';
+  document.getElementById('supabaseProgress').style.width='0%';
   dropZoneJson.style.borderColor='';
-  dropZoneJson.querySelector('.zone-title').innerHTML='📄 resumen_full.json <span style="color:var(--text-muted);font-weight:400;font-size:.8em;">(opcional — para fusionar con datos existentes)</span>';
+  dropZoneJson.querySelector('.zone-title').innerHTML='📄 resumen_full.json <span style="color:var(--text-muted);font-weight:400;font-size:.8em;">(opcional — para fusionar)</span>';
   selOpt('merge');
   goStep(1);
 }

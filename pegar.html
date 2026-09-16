@@ -4,628 +4,951 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pegar Datos — Control Tráfico</title>
-
-<!-- Usar el mismo style.css que index.html -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 
-<!-- Fuente monoespaciada para el textarea de código -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+<!-- ✅ SDK de Supabase (CORRECCIÓN DEL ERROR) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Estilos específicos mínimos para pegar.html usando las variables de style.css -->
 <style>
-.container{max-width:1200px;margin:0 auto;padding:28px 32px;}
-
-/* ── HEADER ── */
-.header{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 32px;display:flex;align-items:center;gap:12px;margin-bottom:24px;box-shadow:var(--shadow);}
-.header-logo{font-family:'Inter',sans-serif;font-size:1.4em;font-weight:700;color:var(--accent);letter-spacing:1px;}
-.btn-back{background:var(--btn-bg);border:1px solid var(--border);color:var(--btn-text);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;text-decoration:none;margin-left:auto;transition:all .2s;font-family:'Inter',sans-serif;}
-.btn-back:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-
-/* Botón modo claro/oscuro */
-.btn-modo{background:var(--btn-bg);border:1px solid var(--border);color:var(--btn-text);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
-.btn-modo:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-
-/* ── STEPS ── */
-.steps{display:flex;gap:0;margin-bottom:32px;}
-.step{flex:1;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);font-size:.8em;color:var(--text-muted);transition:all .3s;font-family:'Inter',sans-serif;}
-.step:first-child{border-radius:8px 0 0 8px;}
-.step:last-child{border-radius:0 8px 8px 0;}
-.step.active{background:var(--bg3);border-color:var(--accent);color:var(--text);}
-.step.done{border-color:var(--accent);color:var(--accent);}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--text-muted);font-family:'Inter',sans-serif;font-weight:700;font-size:.95em;margin-right:7px;transition:all .3s;}
-.step.active .step-num{background:var(--accent);color:var(--bg);}
-.step.done .step-num{background:var(--accent);color:var(--bg);}
-
-/* ── BOTONES ── */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif;}
-.btn-primary{background:var(--accent);color:var(--bg);}
-.btn-primary:hover{opacity:.85;transform:translateY(-1px);}
-.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none;}
-.btn-secondary{background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--border);}
-.btn-secondary:hover{background:var(--btn-hover);color:var(--btn-hover-text);border-color:var(--btn-hover);}
-
-/* ── ZONA DE PEGADO ── */
-.paste-zone{
-  border:2px dashed var(--border);border-radius:12px;
-  background:var(--bg2);padding:0;
-  transition:border-color .3s;overflow:hidden;
-}
-.paste-zone.has-data{border-color:var(--accent);border-style:solid;}
-.paste-zone.focusing{border-color:var(--accent5);}
-
-.paste-hint{padding:48px 32px;text-align:center;}
-.paste-hint-icon{font-size:3em;margin-bottom:12px;display:block;}
-.paste-hint h2{font-family:'Inter',sans-serif;font-size:1.5em;font-weight:700;margin-bottom:8px;color:var(--text);}
-.paste-hint p{color:var(--text-muted);font-size:.9em;margin-bottom:20px;}
-.shortcut{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:1em;color:var(--accent);letter-spacing:2px;}
-
-#pasteArea{
-  width:100%;min-height:120px;resize:vertical;
-  background:var(--bg3);color:var(--text);
-  border:none;border-top:1px solid var(--border);
-  padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:.78em;
-  outline:none;display:block;
-}
-#pasteArea:focus{box-shadow:inset 0 0 0 2px var(--accent);}
-
-#pasteCapture{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
-
-/* ── PREVIEW TABLA ── */
-.preview-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);
-}
-.preview-title{font-family:'Inter',sans-serif;font-weight:700;color:var(--accent);font-size:1em;text-transform:uppercase;letter-spacing:.5px;}
-.preview-wrap{overflow:auto;max-height:340px;}
-table.ptable{width:100%;border-collapse:collapse;font-size:.78em;}
-table.ptable th{background:var(--table-header);color:var(--text-muted);padding:8px 12px;font-family:'Inter',sans-serif;font-weight:600;text-align:left;position:sticky;top:0;border-bottom:2px solid var(--accent);white-space:nowrap;}
-table.ptable td{padding:6px 12px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;}
-table.ptable tr.dup td{background:rgba(239,68,68,.08);}
-table.ptable tr.dup td:first-child{border-left:3px solid var(--accent4);}
-table.ptable tr.new td:first-child{border-left:3px solid var(--accent);}
-table.ptable tr:hover td{background:var(--bg3);}
-
-/* ── STATS ── */
-.stats{display:flex;gap:12px;margin:20px 0;}
-.stat{flex:1;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;text-align:center;}
-.stat:nth-child(2){border-left-color:var(--accent7);}
-.stat:nth-child(3){border-left-color:var(--accent3);}
-.stat:nth-child(4){border-left-color:var(--accent2);}
-.stat-label{font-size:.75em;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-family:'Inter',sans-serif;}
-.stat-val{font-family:'Inter',sans-serif;font-size:1.8em;font-weight:700;color:var(--accent);}
-.stat:nth-child(2) .stat-val{color:var(--accent7);}
-.stat:nth-child(3) .stat-val{color:var(--accent3);}
-.stat:nth-child(4) .stat-val{color:var(--accent2);}
-
-/* ── JSON ZONE ── */
-.json-zone{
-  border:2px dashed var(--border);border-radius:10px;padding:20px 24px;
-  background:var(--bg2);cursor:pointer;transition:all .2s;position:relative;text-align:center;
-}
-.json-zone:hover,.json-zone.drag-over{border-color:var(--accent);background:var(--bg3);}
-.json-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.json-zone.loaded{border-color:var(--accent);border-style:solid;}
-
-/* ── OPTIONS ── */
-.opt-row{display:flex;gap:12px;margin:16px 0;}
-.opt{flex:1;background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .2s;}
-.opt:hover{border-color:var(--accent5);}
-.opt.selected{border-color:var(--accent);background:rgba(20,184,166,.1);}
-.opt-title{font-family:'Inter',sans-serif;font-weight:700;font-size:1em;margin-bottom:3px;color:var(--text);}
-.opt-desc{font-size:.78em;color:var(--text-muted);}
-
-.warn{background:rgba(239,68,68,.1);border:1px solid var(--accent4);border-radius:8px;padding:10px 14px;font-size:.82em;color:var(--accent4);margin:10px 0;}
-.section-title{font-family:'Inter',sans-serif;font-size:.9em;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-
-.download-box{background:linear-gradient(135deg,rgba(20,184,166,.1),rgba(139,92,246,.1));border:1px solid var(--accent);border-radius:12px;padding:32px;text-align:center;margin:20px 0;box-shadow:var(--shadow);}
-.download-box h3{font-family:'Inter',sans-serif;font-size:1.4em;color:var(--accent);margin-bottom:8px;}
-.download-box p{color:var(--text-muted);font-size:.85em;margin-bottom:20px;}
-
-.hidden{display:none!important;}
-
-@media(max-width:768px){
-  .container{padding:16px;}
-  .header{padding:12px 16px;flex-wrap:wrap;}
-  .stats{flex-direction:column;}
-  .opt-row{flex-direction:column;}
-  .steps{flex-direction:column;}
-  .step{border-radius:0!important;}
-  .step:first-child{border-radius:8px 8px 0 0!important;}
-  .step:last-child{border-radius:0 0 8px 8px!important;}
-}
+body { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.header-top h1 { font-size: 1.5em; font-weight: 700; margin-right: auto; }
+.breadcrumb { color: var(--text-muted); font-size: 12px; margin-bottom: 16px; }
+.breadcrumb a { color: var(--accent); text-decoration: none; }
+.steps { display: flex; gap: 8px; margin-bottom: 24px; }
+.step { flex: 1; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; text-align: center; font-size: 12px; color: var(--text-muted); transition: all 0.3s; }
+.step.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+.step.done { background: var(--bg3); color: var(--accent); border-color: var(--accent); }
+.panel { background: var(--chart-bg); border: 1px solid var(--chart-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.panel h2 { font-size: 1em; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+textarea#datosPegar { width: 100%; min-height: 200px; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 12px; resize: vertical; }
+textarea#datosPegar:focus { outline: none; border-color: var(--accent); }
+.contadores { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.contador { flex: 1; min-width: 140px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+.contador-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.contador-valor { font-size: 1.8em; font-weight: 700; color: var(--accent); font-family: 'Rajdhani', sans-serif; }
+.contador-valor.warn { color: var(--accent2); }
+.contador-valor.ok { color: var(--accent7); }
+.contador-valor.err { color: var(--accent4); }
+.preview-wrap { max-height: 400px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.preview-table th { background: var(--table-header); color: var(--text); padding: 8px 10px; text-align: left; position: sticky; top: 0; font-weight: 600; border-bottom: 2px solid var(--accent); }
+.preview-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--table-text); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-table tr:nth-child(even) td { background: var(--table-alt); }
+.preview-table tr.duplicado td { background: rgba(239, 68, 68, 0.1); color: var(--accent4); text-decoration: line-through; }
+.drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg2); }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: rgba(20, 184, 166, 0.05); }
+.drop-zone input[type=file] { display: none; }
+.btn-group { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-secondary { background: var(--btn-bg); color: var(--btn-text); }
+.btn-secondary:hover { background: var(--btn-hover); color: var(--btn-hover-text); }
+.btn-danger { background: var(--accent4); color: white; border-color: var(--accent4); }
+.btn-success { background: var(--accent7); color: white; border-color: var(--accent7); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.hidden { display: none !important; }
+.alert { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 12px; }
+.alert-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent3); }
+.alert-warn { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--accent2); }
+.alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent7); }
+.alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--accent4); }
+.opciones-fusion { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.opcion { flex: 1; min-width: 220px; padding: 14px; background: var(--bg2); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.opcion:hover { border-color: var(--accent); }
+.opcion.selected { border-color: var(--accent); background: rgba(20, 184, 166, 0.08); }
+.opcion h3 { font-size: 13px; margin-bottom: 6px; color: var(--text); }
+.opcion p { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+.input-row { display: flex; gap: 10px; margin: 10px 0; align-items: center; flex-wrap: wrap; }
+.input-row label { font-size: 12px; color: var(--text-muted); min-width: 150px; }
+.input-row input { flex: 1; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); padding: 8px 12px; border-radius: 6px; font-size: 12px; min-width: 200px; }
+.input-row input:focus { outline: none; border-color: var(--accent); }
+.progress-bar { width: 100%; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin: 10px 0; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; width: 0%; }
+.log { background: var(--bg4); color: var(--text-muted); padding: 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; max-height: 200px; overflow-y: auto; margin-top: 10px; border: 1px solid var(--border); }
+.log-line { padding: 2px 0; }
+.log-line.ok { color: var(--accent7); }
+.log-line.err { color: var(--accent4); }
+.log-line.info { color: var(--accent3); }
+.seccion-destino { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+@media (max-width: 900px) { .seccion-destino { grid-template-columns: 1fr; } }
+.destino-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.destino-card h3 { font-size: 14px; margin-bottom: 12px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.destino-card.github h3 { color: #f0f6fc; }
+.destino-card.supabase h3 { color: #3ecf8e; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--bg3); color: var(--text-muted); font-weight: 500; }
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: white; font-weight: 500; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99999; animation: slideIn 0.3s ease-out; max-width: 400px; }
+.toast.exito { background: #10b981; }
+.toast.error { background: #ef4444; }
+.toast.info { background: #3b82f6; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <span class="header-logo">⚡ CONTROL TRÁFICO</span>
-  <span style="color:var(--text-muted);font-size:1.2em;">›</span>
-  <span style="font-family:'Inter',sans-serif;font-weight:600;font-size:1.1em;color:var(--text);">Pegar desde Excel</span>
-  <a href="importar.html" class="btn-back" style="margin-right:8px;">📂 Importar archivo</a>
-  <button class="btn-modo" id="btnModo">☀ Modo claro</button>
-  <a href="index.html" class="btn-back">← Dashboard</a>
+<div class="header-top">
+    <h1>⚡ CONTROL TRÁFICO › Pegar desde Excel</h1>
+    <a href="importar.html" class="btn-nav">📂 Importar archivo</a>
+    <button id="toggleModo" class="btn-nav">☀ Modo claro</button>
 </div>
 
-<div class="container">
-
-  <div class="steps">
-    <div class="step active" id="step1"><span class="step-num">1</span>Pegar datos</div>
-    <div class="step" id="step2"><span class="step-num">2</span>Revisar</div>
-    <div class="step" id="step3"><span class="step-num">3</span>Descargar JSON</div>
-  </div>
-
-  <!-- PASO 1 -->
-  <div id="panel1">
-    <div class="paste-zone" id="pasteZone" onclick="document.getElementById('pasteArea').focus()">
-      <div class="paste-hint">
-        <span class="paste-hint-icon">📋</span>
-        <h2>Pega los datos de Excel aquí</h2>
-        <p>Selecciona las celdas en Excel (incluyendo la fila de cabecera) y pulsa</p>
-        <span class="shortcut">Ctrl + V</span>
-      </div>
-      <textarea
-        id="pasteArea"
-        placeholder="Haz clic aquí y luego Ctrl+V..."
-      ></textarea>
-      <div style="padding:10px 16px;display:flex;justify-content:flex-end;">
-        <button class="btn btn-primary" onclick="procesarDesdeTextarea()">Procesar datos →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PASO 2 -->
-  <div id="panel2" class="hidden">
-
-    <div class="stats">
-      <div class="stat"><div class="stat-label">Filas pegadas</div><div class="stat-val" id="statPegadas">0</div></div>
-      <div class="stat"><div class="stat-label">Filas válidas</div><div class="stat-val" id="statValidas">0</div></div>
-      <div class="stat"><div class="stat-label">Registros en JSON</div><div class="stat-val" id="statJson">0</div></div>
-      <div class="stat"><div class="stat-label">Nuevos registros</div><div class="stat-val" id="statNuevos">0</div></div>
-    </div>
-
-    <div id="dupWarn" class="warn hidden">
-      ⚠️ <strong id="dupCount">0</strong> registros ya existen en el JSON (mismo Nº Aviso) y serán ignorados.
-    </div>
-
-    <div class="paste-zone has-data" style="margin-bottom:16px;">
-      <div class="preview-header">
-        <span class="preview-title">Vista previa de datos pegados</span>
-        <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="reiniciar()">✕ Borrar y volver a pegar</button>
-      </div>
-      <div class="preview-wrap">
-        <table class="ptable"><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table>
-      </div>
-    </div>
-
-    <p class="section-title">JSON actual (opcional)</p>
-    <div class="json-zone" id="jsonZone">
-      <div style="font-size:1.5em;margin-bottom:6px;">📄</div>
-      <div style="font-family:'Inter',sans-serif;font-weight:600;color:var(--text);">resumen_full.json</div>
-      <div style="font-size:.8em;color:var(--text-muted);margin-top:4px;">Arrastra o haz clic para cargar — necesario para fusionar con datos existentes</div>
-      <input type="file" id="jsonInput" accept=".json">
-    </div>
-
-    <div class="opt-row">
-      <div class="opt selected" id="optMerge" onclick="selOpt('merge')">
-        <div class="opt-title">🔀 Fusionar</div>
-        <div class="opt-desc">Añade solo los registros nuevos al JSON existente, sin duplicados</div>
-      </div>
-      <div class="opt" id="optReplace" onclick="selOpt('replace')">
-        <div class="opt-title">🔄 Reemplazar</div>
-        <div class="opt-desc">El JSON contendrá únicamente los datos que acabas de pegar</div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;margin-top:20px;">
-      <button class="btn btn-secondary" onclick="reiniciar()">← Volver a pegar</button>
-      <button class="btn btn-primary" onclick="generar()">Generar JSON →</button>
-    </div>
-  </div>
-
-<!-- ═══════ PANEL SUBIDA A GITHUB ═══════ -->
-<div id="panelGitHub" style="background: var(--chart-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; display: none;">
-  <h3 style="margin: 0 0 16px 0; color: var(--text); font-size: 1.1em;">📤 Subir a GitHub</h3>
-  
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-    <div>
-      <label style="color: var(--text-muted); font-size: 12px; display: block; margin-bottom: 4px;">Repositorio (usuario/repo)</label>
-      <input type="text" id="ghRepo" placeholder="ej: miusuario/mi-repo" 
-             style="width: 100%; padding: 8px 12px; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 6px; font-size: 12px;">
-    </div>
-    <div>
-      <label style="color: var(--text-muted); font-size: 12px; display: block; margin-bottom: 4px;">Ruta del archivo</label>
-      <input type="text" id="ghRuta" value="resumen_full.json" 
-             style="width: 100%; padding: 8px 12px; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 6px; font-size: 12px;">
-    </div>
-  </div>
-  
-  <div style="margin-bottom: 12px;">
-    <label style="color: var(--text-muted); font-size: 12px; display: block; margin-bottom: 4px;">
-      🔐 Token de GitHub 
-      <span style="opacity: 0.6;">(se guarda solo en tu navegador)</span>
-    </label>
-    <div style="display: flex; gap: 8px;">
-      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx o github_pat_xxxxxxxxxxxx" 
-             style="flex: 1; padding: 8px 12px; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 6px; font-size: 12px; font-family: monospace;">
-      <button onclick="document.getElementById('ghToken').type = document.getElementById('ghToken').type === 'password' ? 'text' : 'password'" 
-              style="padding: 8px 12px; background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">👁</button>
-    </div>
-  </div>
-  
-  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-    <button id="btnSubirGitHub" onclick="subirAGitHub()" 
-            style="padding: 10px 20px; background: #238636; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-      📤 Subir JSON a GitHub
-    </button>
-    <button onclick="probarConexion()" 
-            style="padding: 10px 16px; background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">
-      🔌 Probar conexión
-    </button>
-    <label style="color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 4px;">
-      <input type="checkbox" id="ghRecordar" checked> Recordar token en este navegador
-    </label>
-  </div>
-  
-  <div id="ghEstado" style="margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 12px; display: none;"></div>
+<div class="breadcrumb">
+    <a href="index.html">← Dashboard</a>
 </div>
 
-<button onclick="document.getElementById('panelGitHub').style.display = document.getElementById('panelGitHub').style.display === 'none' ? 'block' : 'none'" 
-        class="btn-nav" style="background: #238636; color: white; border: none;">
-  📤 Subir a GitHub
-</button>
-
-  <!-- PASO 3 -->
-  <div id="panel3" class="hidden">
-    <div class="download-box">
-      <h3>✅ JSON generado</h3>
-      <p id="dlSummary"></p>
-      <button class="btn btn-primary" style="font-size:1em;padding:14px 32px;" onclick="descargar()">⬇ Descargar resumen_full.json</button>
-    </div>
-    <div style="display:flex;gap:12px;margin-top:16px;">
-      <button class="btn btn-secondary" onclick="reiniciar()">↺ Pegar nuevos datos</button>
-      <a href="index.html" class="btn btn-primary">→ Ir al dashboard</a>
-    </div>
-  </div>
-
+<!-- PASOS -->
+<div class="steps">
+    <div class="step active" id="step1">1. Pegar datos</div>
+    <div class="step" id="step2">2. Revisar</div>
+    <div class="step" id="step3">3. Subir</div>
 </div>
+
+<!-- PASO 1: PEGAR DATOS -->
+<div class="panel" id="panelPegar">
+    <h2>📋 Pega los datos de Excel aquí</h2>
+    <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">
+        Selecciona las celdas en Excel (incluyendo la fila de cabecera) y pulsa <strong>Ctrl + V</strong>
+    </p>
+    <textarea id="datosPegar" placeholder="Pega aquí los datos desde Excel..."></textarea>
+    
+    <div class="btn-group">
+        <button class="btn btn-primary" id="btnProcesar">Procesar datos →</button>
+        <button class="btn btn-secondary" id="btnLimpiarTodo">🗑️ Limpiar todo</button>
+    </div>
+    
+    <div class="contadores" id="contadores" style="display:none;">
+        <div class="contador"><div class="contador-label">Filas pegadas</div><div class="contador-valor" id="cntPegadas">0</div></div>
+        <div class="contador"><div class="contador-label">Filas válidas</div><div class="contador-valor ok" id="cntValidas">0</div></div>
+        <div class="contador"><div class="contador-label">Nuevos registros</div><div class="contador-valor ok" id="cntNuevos">0</div></div>
+        <div class="contador"><div class="contador-label">Duplicados</div><div class="contador-valor warn" id="cntDuplicados">0</div></div>
+    </div>
+</div>
+
+<!-- PASO 2: REVISAR -->
+<div class="panel hidden" id="panelRevisar">
+    <h2>👁️ Vista previa de datos pegados</h2>
+    <div id="alertaDuplicados"></div>
+    <div class="preview-wrap">
+        <table class="preview-table" id="tablaPreview">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <div class="btn-group">
+        <button class="btn btn-secondary" id="btnVolverPegar">← Volver a pegar</button>
+        <button class="btn btn-primary" id="btnContinuar">Continuar →</button>
+    </div>
+</div>
+
+<!-- PASO 3: SUBIR -->
+<div class="panel hidden" id="panelSubir">
+    <h2>📤 Subir datos</h2>
+    
+    <!-- JSON ACTUAL (opcional, para fusionar) -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="font-size:13px; margin-bottom:10px; color:var(--text);">📄 JSON actual (opcional, para modo "Fusionar")</h3>
+        <div class="drop-zone" id="dropZone">
+            <p style="color:var(--text-muted); font-size:12px;">
+                Arrastra o haz clic para cargar <strong>resumen_full.json</strong><br>
+                <small>Necesario solo si quieres fusionar con datos existentes</small>
+            </p>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+        <div id="jsonInfo" style="margin-top:10px;"></div>
+    </div>
+    
+    <!-- MODO: FUSIONAR O REEMPLAZAR -->
+    <h3 style="font-size:13px; margin-bottom:10px; color:var(--text);">🔀 Modo de subida</h3>
+    <div class="opciones-fusion">
+        <div class="opcion selected" data-modo="fusionar" id="optFusionar">
+            <h3>🔀 Fusionar</h3>
+            <p>Añade solo los registros nuevos, sin duplicados (por Nº Aviso)</p>
+        </div>
+        <div class="opcion" data-modo="reemplazar" id="optReemplazar">
+            <h3>🔄 Reemplazar</h3>
+            <p>Sobrescribe todo con los datos que acabas de pegar</p>
+        </div>
+    </div>
+    
+    <!-- DESTINOS DE SUBIDA -->
+    <div class="seccion-destino">
+        
+        <!-- SUPABASE -->
+        <div class="destino-card supabase">
+            <h3>🗄️ Base de datos <span class="badge">Supabase</span></h3>
+            <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+                Sube los datos directamente a la base de datos en la nube. Se verán al instante en el dashboard y en incidencias.html
+            </p>
+            <div class="btn-group" style="flex-direction:column;">
+                <button class="btn btn-success" id="btnSubirSupabase">
+                    🚀 Subir a Supabase
+                </button>
+            </div>
+            <div id="supabaseLog" class="log hidden"></div>
+            <div class="progress-bar hidden" id="supabaseProgress"><div class="progress-fill" id="supabaseFill"></div></div>
+        </div>
+        
+        <!-- GITHUB -->
+        <div class="destino-card github">
+            <h3>🐙 Archivo JSON <span class="badge">GitHub</span></h3>
+            <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+                Genera el JSON y súbelo a tu repositorio de GitHub
+            </p>
+            
+            <div class="btn-group" style="flex-direction:column;">
+                <button class="btn btn-primary" id="btnGenerarJSON">📄 Generar JSON</button>
+                <button class="btn btn-secondary hidden" id="btnDescargar">⬇️ Descargar JSON</button>
+            </div>
+            
+            <div id="panelGitHub" class="hidden" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+                <div class="input-row">
+                    <label>Repositorio (usuario/repo):</label>
+                    <input type="text" id="ghRepo" placeholder="usuario/nombre-repo">
+                </div>
+                <div class="input-row">
+                    <label>Ruta del archivo:</label>
+                    <input type="text" id="ghPath" value="resumen_full.json" placeholder="resumen_full.json">
+                </div>
+                <div class="input-row">
+                    <label>🔐 Token de GitHub:</label>
+                    <input type="password" id="ghToken" placeholder="ghp_xxxx">
+                    <button class="btn btn-secondary" id="btnVerToken" style="padding:6px 10px;">👁</button>
+                </div>
+                <label style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:6px; margin:8px 0;">
+                    <input type="checkbox" id="chkRecordar"> Recordar token en este navegador
+                </label>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnSubirGitHub">📤 Subir a GitHub</button>
+                    <button class="btn btn-secondary" id="btnProbarConexion">🔌 Probar conexión</button>
+                </div>
+            </div>
+            <div id="githubLog" class="log hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIGURACIÓN SUPABASE -->
+<script src="supabase-config.js"></script>
 
 <script>
-// ── Modo claro/oscuro ──
-let modoOscuro = localStorage.getItem('pegar_modo') !== 'light';
-function actualizarModo() {
-  document.body.classList.toggle('light-mode', !modoOscuro);
-  document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-  localStorage.setItem('pegar_modo', modoOscuro ? 'dark' : 'light');
+// ═══════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════════
+let datosProcesados = [];       // Datos nuevos pegados (ya parseados)
+let datosExistentes = [];       // Datos del JSON existente (si se carga)
+let datosFinales = [];          // Resultado final después de fusionar/reemplazar
+let modoSeleccionado = 'fusionar';
+let jsonCargado = false;
+let modoOscuro = localStorage.getItem('ct_modo') !== 'light';
+
+// ═══════════════════════════════════════════════════════════════
+// MAPEO DE CLAVES (normaliza variaciones de nombres de columnas)
+// ═══════════════════════════════════════════════════════════════
+// Esto resuelve el problema de que el JSON tiene espacios al final
+// y Excel puede tener espacios múltiples entre palabras
+const MAPEO_CLAVES_CANONICAS = {
+    'FAMILIA': 'FAMILIA',
+    'VHLO': 'VHLO',
+    'CONDUCTOR': 'CONDUCTOR',
+    'FAMILIA AVERIA': 'FAMILIA AVERIA',
+    'FAMILIA_AVERIA': 'FAMILIA AVERIA',
+    'DEFICIENCIAS DETECTADAS': 'DEFICIENCIAS DETECTADAS',
+    'DEFICIENCIAS': 'DEFICIENCIAS DETECTADAS',
+    'DESCRIPCION AVERIA': 'DESCRIPCION AVERIA',
+    'DESCRIPCION_AVERIA': 'DESCRIPCION AVERIA',
+    'FOTO': 'FOTO',
+    'FECHA AVISO': 'FECHA AVISO',
+    'FECHA_AVISO': 'FECHA AVISO',
+    'HORA': 'HORA',
+    'TURNO': 'TURNO',
+    'N AVISO': 'N AVISO',       // Un espacio
+    'N  AVISO': 'N AVISO',      // Dos espacios → un espacio
+    'N_AVI SO': 'N AVISO',
+    'Nº AVISO': 'N AVISO',
+    'NAVI SO': 'N AVISO',
+    'AVISO ANTIGUO': 'AVISO ANTIGUO',
+    'AVISO ANTIGUO?': 'AVISO ANTIGUO',
+    'AVISO_ANTIGUO': 'AVISO ANTIGUO',
+    'ORIGEN AVISO': 'ORIGEN AVISO',
+    'ORIGEN_AVISO': 'ORIGEN AVISO',
+    'TIPO ORDEN': 'TIPO ORDEN',
+    'TIPO_ORDEN': 'TIPO ORDEN',
+    'COLUMNA1': 'COLUMNA1',
+    'COLUMNA2': 'COLUMNA2',
+    'COLUMNA3': 'COLUMNA3',
+    'COLUMNA4': 'COLUMNA4',
+    'COLUMN1': 'COLUMNA1',
+    'COLUMN2': 'COLUMNA2',
+    'COLUMN3': 'COLUMNA3',
+    'COLUMN4': 'COLUMNA4'
+};
+
+// Mapeo: nombre canónico → nombre en Supabase (snake_case)
+const MAPEO_A_SUPABASE = {
+    'FAMILIA': 'familia',
+    'VHLO': 'vhlo',
+    'CONDUCTOR': 'conductor',
+    'FAMILIA AVERIA': 'familia_averia',
+    'DEFICIENCIAS DETECTADAS': 'deficiencias',
+    'DESCRIPCION AVERIA': 'descripcion_averia',
+    'FOTO': 'foto',
+    'FECHA AVISO': 'fecha_aviso',
+    'HORA': 'hora',
+    'TURNO': 'turno',
+    'N AVISO': 'n_aviso',
+    'AVISO ANTIGUO': 'aviso_antiguo',
+    'ORIGEN AVISO': 'origen_aviso',
+    'TIPO ORDEN': 'tipo_orden',
+    'COLUMNA1': 'columna1',
+    'COLUMNA2': 'columna2',
+    'COLUMNA3': 'columna3',
+    'COLUMNA4': 'columna4'
+};
+
+if (!modoOscuro) document.body.classList.add('light-mode');
+
+// ═══════════════════════════════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════════════════════════════
+function toast(texto, tipo = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${tipo}`;
+    t.textContent = texto;
+    document.body.appendChild(t);
+    setTimeout(() => {
+        t.style.transition = 'opacity 0.3s';
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 300);
+    }, 2500);
 }
-document.getElementById('btnModo').addEventListener('click', () => {
-  modoOscuro = !modoOscuro;
-  actualizarModo();
-});
-actualizarModo();
 
-// ── Lógica original ──
-const CAMPOS = ['FAMILIA','VHLO','CONDUCTOR','FAMILIA AVERIA','DEFICIENCIAS DETECTADAS',
-  'DESCRIPCION AVERIA','FOTO','FECHA AVISO','HORA','TURNO','Nº AVISO',
-  'AVISO ANTIGUO?','ORIGEN AVISO','TIPO ORDEN'];
-
-let datosPegados = [], datosJson = [], datosFinal = [], modo = 'merge';
-
-// ── Auto-procesar al pegar en el textarea ──
-document.getElementById('pasteArea').addEventListener('paste', e => {
-  setTimeout(() => {
-    const txt = document.getElementById('pasteArea').value;
-    if (txt.trim()) procesarTexto(txt);
-  }, 50);
-});
-
-function procesarDesdeTextarea() {
-  const txt = document.getElementById('pasteArea').value;
-  if (!txt.trim()) { alert('Primero pega los datos copiados de Excel (Ctrl+V dentro del área de texto)'); return; }
-  procesarTexto(txt);
+function log(containerId, mensaje, tipo = 'info') {
+    const logEl = document.getElementById(containerId);
+    logEl.classList.remove('hidden');
+    const linea = document.createElement('div');
+    linea.className = `log-line ${tipo}`;
+    const hora = new Date().toLocaleTimeString();
+    linea.textContent = `[${hora}] ${mensaje}`;
+    logEl.appendChild(linea);
+    logEl.scrollTop = logEl.scrollHeight;
 }
 
-function procesarTexto(txt) {
-  const lineas = txt.split('\n').map(l => l.trimEnd()).filter(l => l.trim());
-  if (lineas.length < 2) { alert('No se detectaron suficientes filas. Asegúrate de copiar también la cabecera.'); return; }
-
-  const sep = lineas[0].includes('\t') ? '\t' : ';';
-  const headers = lineas[0].split(sep).map(h => h.trim().replace(/"/g,''));
-  const rows = lineas.slice(1).map(l => {
-    const vals = l.split(sep).map(v => v.trim().replace(/"/g,''));
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = vals[i] !== undefined ? vals[i] : '');
-    return obj;
-  });
-
-  datosPegados = normalizarDatos(rows);
-  mostrarPreview();
-  goStep(2);
-}
-
-function normalizarDatos(rows) {
-  return rows.map(row => {
-    const obj = {};
-    CAMPOS.forEach(campo => {
-      const key = Object.keys(row).find(k => norm(k) === norm(campo));
-      let val = key !== undefined ? (row[key] || '') : '';
-      if (campo === 'FECHA AVISO' && val) val = normFecha(val);
-      if (campo === 'Nº AVISO' && val) val = val.toString().trim();
-      obj[campo] = val.toString().trim();
+function setStep(n) {
+    document.querySelectorAll('.step').forEach((s, i) => {
+        s.classList.remove('active', 'done');
+        if (i + 1 < n) s.classList.add('done');
+        else if (i + 1 === n) s.classList.add('active');
     });
-    return obj;
-  }).filter(r => r['VHLO'] && r['VHLO'].trim() !== '');
 }
 
-function norm(s) {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();
-}
-
-function normFecha(val) {
-  if (!val) return '';
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
-  const d = new Date(val);
-  if (!isNaN(d)) return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  return val;
-}
-
-function mostrarPreview() {
-  const avisosJson = new Set(datosJson.map(r => (r['Nº AVISO']||'').toString().trim()).filter(Boolean));
-  let dups = 0;
-  datosPegados.forEach(r => { if (r['Nº AVISO'] && avisosJson.has(r['Nº AVISO'])) dups++; });
-
-  document.getElementById('statPegadas').textContent = datosPegados.length;
-  document.getElementById('statValidas').textContent = datosPegados.length;
-  document.getElementById('statJson').textContent = datosJson.length;
-  document.getElementById('statNuevos').textContent = datosPegados.length - dups;
-
-  if (dups > 0) { document.getElementById('dupWarn').classList.remove('hidden'); document.getElementById('dupCount').textContent = dups; }
-  else document.getElementById('dupWarn').classList.add('hidden');
-
-  const head = document.getElementById('previewHead');
-  const body = document.getElementById('previewBody');
-  head.innerHTML = '<tr>' + CAMPOS.map(c => `<th>${c}</th>`).join('') + '</tr>';
-  body.innerHTML = '';
-  datosPegados.slice(0, 100).forEach(row => {
-    const isDup = row['Nº AVISO'] && avisosJson.has(row['Nº AVISO']);
-    const tr = document.createElement('tr');
-    tr.className = isDup ? 'dup' : 'new';
-    CAMPOS.forEach(c => { const td = document.createElement('td'); td.textContent = row[c] || '—'; tr.appendChild(td); });
-    body.appendChild(tr);
-  });
-}
-
-// JSON drag & drop
-const jz = document.getElementById('jsonZone');
-jz.addEventListener('dragover', e => { e.preventDefault(); jz.classList.add('drag-over'); });
-jz.addEventListener('dragleave', () => jz.classList.remove('drag-over'));
-jz.addEventListener('drop', e => { e.preventDefault(); jz.classList.remove('drag-over'); cargarJson(e.dataTransfer.files[0]); });
-document.getElementById('jsonInput').addEventListener('change', e => cargarJson(e.target.files[0]));
-
-function cargarJson(file) {
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    try {
-      datosJson = JSON.parse(ev.target.result);
-      jz.classList.add('loaded');
-      jz.querySelector('div:nth-child(2)').textContent = `✓ ${file.name}`;
-      jz.querySelector('div:nth-child(3)').textContent = `${datosJson.length.toLocaleString()} registros cargados`;
-      mostrarPreview();
-    } catch(e) { alert('Error al leer JSON: ' + e.message); }
-  };
-  r.readAsText(file);
-}
-
-function selOpt(m) {
-  modo = m;
-  document.getElementById('optMerge').classList.toggle('selected', m === 'merge');
-  document.getElementById('optReplace').classList.toggle('selected', m === 'replace');
-}
-
-function generar() {
-  if (modo === 'replace') {
-    datosFinal = datosPegados;
-  } else {
-    const avisosJson = new Set(datosJson.map(r => (r['Nº AVISO']||'').toString().trim()).filter(Boolean));
-    const nuevos = datosPegados.filter(r => !r['Nº AVISO'] || !avisosJson.has(r['Nº AVISO']));
-    datosFinal = [...datosJson, ...nuevos];
-  }
-  
-  // ✅ ESTA ES LA LÍNEA QUE FALTABA:
-  window.jsonGenerado = datosFinal; 
-  
-  document.getElementById('dlSummary').textContent =
-    `${datosFinal.length.toLocaleString()} registros totales · ${modo === 'merge' ? 'Fusionado' : 'Reemplazado'}`;
-  goStep(3);
-}
-
-function descargar() {
-  const blob = new Blob([JSON.stringify(datosFinal, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'resumen_full.json';
-  a.click();
-}
-
-function goStep(n) {
-  [1,2,3].forEach(i => {
-    document.getElementById('panel'+i).classList.toggle('hidden', i !== n);
-    const s = document.getElementById('step'+i);
-    s.classList.remove('active','done');
-    if (i < n) s.classList.add('done');
-    else if (i === n) s.classList.add('active');
-  });
-}
-
-function reiniciar() {
-  datosPegados = []; datosFinal = [];
-  document.getElementById('previewHead').innerHTML = '';
-  document.getElementById('previewBody').innerHTML = '';
-  goStep(1);
-}
-</script>
-<script>
-// ═══════ CONFIGURACIÓN GITHUB ═══════
-const GH_STORAGE_KEY = 'ct_github_config';
-
-// Cargar configuración guardada al abrir la página
-window.addEventListener('DOMContentLoaded', () => {
-  try {
-    const guardado = localStorage.getItem(GH_STORAGE_KEY);
-    if (guardado) {
-      const cfg = JSON.parse(guardado);
-      if (cfg.repo) document.getElementById('ghRepo').value = cfg.repo;
-      if (cfg.ruta) document.getElementById('ghRuta').value = cfg.ruta;
-      if (cfg.token) document.getElementById('ghToken').value = cfg.token;
+// ═══════════════════════════════════════════════════════════════
+// NORMALIZAR NOMBRE DE COLUMNA (CLAVE CANÓNICA)
+// ═══════════════════════════════════════════════════════════════
+function normalizarClave(nombre) {
+    // 1. Quitar espacios al inicio/final
+    let n = nombre.toString().trim();
+    // 2. Convertir a mayúsculas
+    n = n.toUpperCase();
+    // 3. Quitar signos de interrogación y caracteres especiales
+    n = n.replace(/[¿?]/g, '').trim();
+    // 4. Reemplazar guiones bajos por espacios
+    n = n.replace(/_/g, ' ');
+    // 5. Colapsar múltiples espacios en uno solo
+    n = n.replace(/\s+/g, ' ').trim();
+    // 6. Buscar en el mapeo canónico
+    if (MAPEO_CLAVES_CANONICAS[n]) {
+        return MAPEO_CLAVES_CANONICAS[n];
     }
-  } catch (e) { console.warn('No se pudo cargar config GitHub', e); }
+    // 7. Si no está en el mapeo, devolver la versión normalizada
+    return n;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NORMALIZAR UNA FILA COMPLETA (convierte claves a canónicas)
+// ═══════════════════════════════════════════════════════════════
+function normalizarFila(fila) {
+    const resultado = {};
+    for (const key in fila) {
+        const keyNorm = normalizarClave(key);
+        resultado[keyNorm] = fila[key];
+    }
+    return resultado;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONVERTIR FILA A FORMATO SUPABASE
+// ═══════════════════════════════════════════════════════════════
+function convertirASupabase(fila) {
+    const resultado = {};
+    for (const key in fila) {
+        const keySupabase = MAPEO_A_SUPABASE[key];
+        if (keySupabase) {
+            let valor = fila[key];
+            if (valor === '' || valor === null || valor === undefined) {
+                valor = null;
+            }
+            // Convertir espacios vacíos a null
+            if (typeof valor === 'string' && valor.trim() === '') {
+                valor = null;
+            }
+            resultado[keySupabase] = valor;
+        }
+    }
+    return resultado;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OBTENER Nº AVISO DE UNA FILA (ya normalizada)
+// ═══════════════════════════════════════════════════════════════
+function getNAviso(fila) {
+    const nav = (fila['N AVISO'] || '').toString().trim();
+    return nav;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARSEAR DATOS PEGADOS DESDE EXCEL
+// ═══════════════════════════════════════════════════════════════
+function parsearDatos(texto) {
+    const lineas = texto.split(/\r?\n/).filter(l => l.trim() !== '');
+    if (lineas.length < 2) return { cabeceras: [], filas: [] };
+    
+    // Detectar separador (tab o múltiples espacios)
+    const separador = lineas[0].includes('\t') ? '\t' : /\s{2,}/;
+    
+    const cabecerasRaw = lineas[0].split(separador);
+    const cabecerasNorm = cabecerasRaw.map(c => normalizarClave(c));
+    
+    const filas = [];
+    
+    for (let i = 1; i < lineas.length; i++) {
+        const valores = lineas[i].split(separador);
+        if (valores.length === 0) continue;
+        
+        const fila = {};
+        cabecerasNorm.forEach((cab, idx) => {
+            let val = (valores[idx] || '').trim();
+            // Intentar convertir a número si es posible
+            if (val !== '' && !isNaN(val) && val.length < 15) {
+                const num = Number(val);
+                if (Number.isInteger(num) && Math.abs(num) < 1e15) val = num;
+            }
+            fila[cab] = val;
+        });
+        filas.push(fila);
+    }
+    
+    return { cabeceras: cabecerasNorm, filas };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESAR DATOS (botón "Procesar datos")
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnProcesar').addEventListener('click', () => {
+    const texto = document.getElementById('datosPegar').value;
+    if (!texto.trim()) {
+        toast('⚠️ Pega primero los datos', 'error');
+        return;
+    }
+    
+    const { cabeceras, filas } = parsearDatos(texto);
+    
+    if (filas.length === 0) {
+        toast('⚠️ No se pudieron parsear los datos', 'error');
+        return;
+    }
+    
+    // Filtrar filas válidas (que tengan al menos VHLO o FECHA AVISO)
+    const filasValidas = filas.filter(f => {
+        const vhlo = (f['VHLO'] || '').toString().trim();
+        const fecha = (f['FECHA AVISO'] || '').toString().trim();
+        return vhlo !== '' || fecha !== '';
+    });
+    
+    datosProcesados = filasValidas;
+    
+    // Actualizar contadores
+    document.getElementById('contadores').style.display = 'flex';
+    document.getElementById('cntPegadas').textContent = filas.length;
+    document.getElementById('cntValidas').textContent = filasValidas.length;
+    
+    // Si hay JSON cargado, calcular duplicados AHORA
+    if (jsonCargado && modoSeleccionado === 'fusionar') {
+        calcularDuplicados();
+    }
+    
+    // Mostrar preview
+    mostrarPreview(filasValidas, cabeceras);
+    
+    // Pasar al paso 2
+    document.getElementById('panelRevisar').classList.remove('hidden');
+    setStep(2);
+    
+    toast(`✅ ${filasValidas.length} filas procesadas`, 'exito');
 });
 
-function guardarConfig() {
-  if (!document.getElementById('ghRecordar').checked) return;
-  const cfg = {
-    repo: document.getElementById('ghRepo').value.trim(),
-    ruta: document.getElementById('ghRuta').value.trim(),
-    token: document.getElementById('ghToken').value.trim()
-  };
-  localStorage.setItem(GH_STORAGE_KEY, JSON.stringify(cfg));
-}
-
-function mostrarEstado(msg, tipo = 'info') {
-  const el = document.getElementById('ghEstado');
-  const colores = {
-    info:    { bg: 'rgba(59,130,246,0.15)', border: '#3b82f6', color: '#93c5fd' },
-    ok:      { bg: 'rgba(34,197,94,0.15)',  border: '#22c55e', color: '#86efac' },
-    error:   { bg: 'rgba(239,68,68,0.15)',  border: '#ef4444', color: '#fca5a5' },
-    warning: { bg: 'rgba(245,158,11,0.15)', border: '#f59e0b', color: '#fcd34d' }
-  };
-  const c = colores[tipo] || colores.info;
-  el.style.display = 'block';
-  el.style.background = c.bg;
-  el.style.border = `1px solid ${c.border}`;
-  el.style.color = c.color;
-  el.innerHTML = msg;
-}
-
-async function probarConexion() {
-  const repo = document.getElementById('ghRepo').value.trim();
-  const token = document.getElementById('ghToken').value.trim();
-  if (!repo || !token) {
-    mostrarEstado('⚠️ Rellena el repositorio y el token', 'warning');
-    return;
-  }
-  mostrarEstado('🔄 Probando conexión...', 'info');
-  try {
-    const res = await fetch(`https://api.github.com/repos/${repo}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+// ═══════════════════════════════════════════════════════════════
+// CALCULAR DUPLICADOS (compara con JSON existente)
+// ═══════════════════════════════════════════════════════════════
+function calcularDuplicados() {
+    if (!jsonCargado) return;
+    
+    // Extraer Nº Aviso del JSON existente (ya normalizado)
+    const avisosExistentes = new Set();
+    datosExistentes.forEach(d => {
+        const nav = getNAviso(d);
+        if (nav !== '') avisosExistentes.add(nav);
     });
-    if (res.ok) {
-      const data = await res.json();
-      mostrarEstado(`✅ Conectado con <b>${data.full_name}</b><br>⭐ ${data.stargazers_count} stars · ${data.private ? 'Privado' : 'Público'}`, 'ok');
-      guardarConfig();
-    } else if (res.status === 401) {
-      mostrarEstado('❌ Token inválido o expirado', 'error');
-    } else if (res.status === 404) {
-      mostrarEstado('❌ Repositorio no encontrado o sin permisos', 'error');
+    
+    // Contar duplicados en los datos pegados
+    let duplicados = 0;
+    let nuevos = 0;
+    const duplicadosSet = new Set();
+    
+    datosProcesados.forEach((fila, idx) => {
+        const nav = getNAviso(fila);
+        if (nav !== '' && avisosExistentes.has(nav)) {
+            duplicados++;
+            duplicadosSet.add(idx);
+        } else {
+            nuevos++;
+        }
+    });
+    
+    // Actualizar contadores
+    document.getElementById('cntNuevos').textContent = nuevos;
+    document.getElementById('cntDuplicados').textContent = duplicados;
+    
+    // Mostrar alerta si hay duplicados
+    if (duplicados > 0) {
+        document.getElementById('alertaDuplicados').innerHTML = 
+            `<div class="alert alert-warn">⚠️ <strong>${duplicados} registros ya existen</strong> en el JSON (mismo Nº Aviso) y serán ignorados al fusionar. 
+            Están marcados en rojo en la vista previa.</div>`;
+        
+        // Marcar duplicados en la tabla preview
+        marcarDuplicadosEnPreview(duplicadosSet);
     } else {
-      mostrarEstado(`❌ Error ${res.status}: ${res.statusText}`, 'error');
+        document.getElementById('alertaDuplicados').innerHTML = 
+            `<div class="alert alert-success">✅ Todos los registros son nuevos. No hay duplicados.</div>`;
     }
-  } catch (e) {
-    mostrarEstado('❌ Error de red: ' + e.message, 'error');
-  }
 }
 
-async function subirAGitHub() {
-  // 1. Validar que hay JSON generado
-  if (!window.jsonGenerado || !window.jsonGenerado.length) {
-    mostrarEstado('⚠️ Primero genera el JSON (paso 3)', 'warning');
-    return;
-  }
-  
-  const repo = document.getElementById('ghRepo').value.trim();
-  const ruta = document.getElementById('ghRuta').value.trim() || 'resumen_full.json';
-  const token = document.getElementById('ghToken').value.trim();
-  
-  if (!repo || !token) {
-    mostrarEstado('⚠️ Rellena el repositorio y el token', 'warning');
-    return;
-  }
-  
-  const btn = document.getElementById('btnSubirGitHub');
-  const textoOriginal = btn.innerHTML;
-  btn.innerHTML = '⏳ Subiendo...';
-  btn.disabled = true;
-  mostrarEstado('🔄 Obteniendo información del archivo...', 'info');
-  
-  try {
-    const url = `https://api.github.com/repos/${repo}/contents/${ruta}`;
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github+json'
-    };
+// ═══════════════════════════════════════════════════════════════
+// MARCAR DUPLICADOS EN LA VISTA PREVIA
+// ═══════════════════════════════════════════════════════════════
+function marcarDuplicadosEnPreview(indicesDuplicados) {
+    const tbody = document.querySelector('#tablaPreview tbody');
+    if (!tbody) return;
     
-    // 2. Comprobar si el archivo ya existe (para obtener el SHA)
-    let sha = null;
-    try {
-      const resGet = await fetch(url, { headers });
-      if (resGet.ok) {
-        const data = await resGet.json();
-        sha = data.sha;
-      } else if (resGet.status !== 404) {
-        throw new Error(`Error al consultar archivo: ${resGet.status}`);
-      }
-    } catch (e) {
-      if (!e.message.includes('404')) console.warn('Archivo no existe aún, se creará nuevo');
-    }
-    
-    // 3. Codificar JSON a base64
-    const jsonStr = JSON.stringify(window.jsonGenerado, null, 2);
-    const contenido = btoa(unescape(encodeURIComponent(jsonStr)));
-    
-    // 4. Preparar commit
-    const mensaje = `📊 Actualización automática — ${window.jsonGenerado.length} registros — ${new Date().toLocaleString('es-ES')}`;
-    const body = {
-      message: mensaje,
-      content: contenido
-    };
-    if (sha) body.sha = sha; // Obligatorio para actualizar
-    
-    mostrarEstado('📤 Enviando datos a GitHub...', 'info');
-    
-    // 5. Subir/actualizar archivo
-    const resPut = await fetch(url, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    const filas = tbody.querySelectorAll('tr');
+    filas.forEach((fila, idx) => {
+        if (indicesDuplicados.has(idx)) {
+            fila.classList.add('duplicado');
+        }
     });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOSTRAR PREVIEW
+// ═══════════════════════════════════════════════════════════════
+function mostrarPreview(filas, cabeceras) {
+    const thead = document.querySelector('#tablaPreview thead');
+    const tbody = document.querySelector('#tablaPreview tbody');
     
-    if (!resPut.ok) {
-      const err = await resPut.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${resPut.status}`);
+    thead.innerHTML = '<tr>' + cabeceras.map(c => `<th>${c}</th>`).join('') + '</tr>';
+    tbody.innerHTML = filas.map(f => 
+        '<tr>' + cabeceras.map(c => `<td>${f[c] !== undefined ? f[c] : ''}</td>`).join('') + '</tr>'
+    ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARGAR JSON EXISTENTE (para fusionar)
+// ═══════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) cargarJSON(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+    if (e.target.files.length) cargarJSON(e.target.files[0]);
+});
+
+function cargarJSON(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!Array.isArray(data)) throw new Error('No es un array');
+            
+            // ═══ NORMALIZAR TODAS LAS FILAS DEL JSON ═══
+            datosExistentes = data.map(fila => normalizarFila(fila));
+            jsonCargado = true;
+            
+            document.getElementById('jsonInfo').innerHTML = 
+                `<div class="alert alert-success">✅ JSON cargado: <strong>${datosExistentes.length}</strong> registros existentes</div>`;
+            
+            toast(`✅ JSON cargado: ${datosExistentes.length} registros`, 'exito');
+            
+            // Si ya hay datos procesados, recalcular duplicados
+            if (datosProcesados.length > 0 && modoSeleccionado === 'fusionar') {
+                calcularDuplicados();
+            }
+            
+        } catch (err) {
+            document.getElementById('jsonInfo').innerHTML = 
+                `<div class="alert alert-error">❌ Error al cargar JSON: ${err.message}</div>`;
+            toast('❌ Error al cargar JSON', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SELECCIONAR MODO (FUSIONAR / REEMPLAZAR)
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.opcion').forEach(op => {
+    op.addEventListener('click', () => {
+        document.querySelectorAll('.opcion').forEach(o => o.classList.remove('selected'));
+        op.classList.add('selected');
+        modoSeleccionado = op.dataset.modo;
+        
+        // Recalcular duplicados si hay datos
+        if (datosProcesados.length > 0 && jsonCargado) {
+            calcularDuplicados();
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// NAVEGACIÓN ENTRE PASOS
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnVolverPegar').addEventListener('click', () => {
+    document.getElementById('panelRevisar').classList.add('hidden');
+    setStep(1);
+});
+
+document.getElementById('btnContinuar').addEventListener('click', () => {
+    document.getElementById('panelSubir').classList.remove('hidden');
+    setStep(3);
+    document.getElementById('panelSubir').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('btnLimpiarTodo').addEventListener('click', () => {
+    if (!confirm('¿Seguro que quieres limpiar todo?')) return;
+    document.getElementById('datosPegar').value = '';
+    document.getElementById('contadores').style.display = 'none';
+    document.getElementById('panelRevisar').classList.add('hidden');
+    document.getElementById('panelSubir').classList.add('hidden');
+    document.getElementById('alertaDuplicados').innerHTML = '';
+    datosProcesados = [];
+    datosExistentes = [];
+    datosFinales = [];
+    jsonCargado = false;
+    setStep(1);
+    toast('🗑️ Todo limpio', 'info');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// GENERAR JSON
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnGenerarJSON').addEventListener('click', () => {
+    if (datosProcesados.length === 0) {
+        toast('⚠️ No hay datos para generar', 'error');
+        return;
     }
     
-    const resultado = await resPut.json();
-    guardarConfig();
+    if (modoSeleccionado === 'fusionar') {
+        if (!jsonCargado) {
+            toast('⚠️ Para fusionar, carga primero el JSON existente', 'error');
+            return;
+        }
+        
+        // Extraer Nº Aviso existentes
+        const avisosExistentes = new Set();
+        datosExistentes.forEach(d => {
+            const nav = getNAviso(d);
+            if (nav !== '') avisosExistentes.add(nav);
+        });
+        
+        // Filtrar solo los nuevos
+        const nuevos = datosProcesados.filter(fila => {
+            const nav = getNAviso(fila);
+            return nav === '' || !avisosExistentes.has(nav);
+        });
+        
+        datosFinales = [...datosExistentes, ...nuevos];
+        
+        const duplicados = datosProcesados.length - nuevos.length;
+        document.getElementById('cntNuevos').textContent = nuevos.length;
+        document.getElementById('cntDuplicados').textContent = duplicados;
+        
+    } else {
+        // Reemplazar: solo los nuevos
+        datosFinales = [...datosProcesados];
+        document.getElementById('cntNuevos').textContent = datosFinales.length;
+        document.getElementById('cntDuplicados').textContent = 0;
+    }
     
-    const commitCorto = resultado.commit.sha.substring(0, 7);
-    const accion = sha ? 'actualizado' : 'creado';
+    // Mostrar panel de GitHub
+    document.getElementById('panelGitHub').classList.remove('hidden');
+    document.getElementById('btnDescargar').classList.remove('hidden');
     
-    mostrarEstado(
-      `✅ <b>¡JSON ${accion} correctamente!</b><br>` +
-      `📦 ${window.jsonGenerado.length} registros<br>` +
-      `🔖 Commit: <code>${commitCorto}</code><br>` +
-      `🔗 <a href="${resultado.content.html_url}" target="_blank" style="color: inherit; text-decoration: underline;">Ver en GitHub</a><br>` +
-      `<small style="opacity: 0.7;">⏱ GitHub tarda ~1 min en propagar los cambios al dashboard</small>`,
-      'ok'
-    );
+    // Cargar datos guardados
+    const repoGuardado = localStorage.getItem('gh_repo');
+    const tokenGuardado = localStorage.getItem('gh_token');
+    if (repoGuardado) document.getElementById('ghRepo').value = repoGuardado;
+    if (tokenGuardado) document.getElementById('ghToken').value = tokenGuardado;
     
-  } catch (e) {
-    console.error('Error subiendo a GitHub:', e);
-    mostrarEstado(`❌ <b>Error:</b> ${e.message}`, 'error');
-  } finally {
-    btn.innerHTML = textoOriginal;
-    btn.disabled = false;
-  }
-}
+    toast(`✅ JSON generado: ${datosFinales.length} registros`, 'exito');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// DESCARGAR JSON
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnDescargar').addEventListener('click', () => {
+    if (datosFinales.length === 0) {
+        toast('⚠️ Genera primero el JSON', 'error');
+        return;
+    }
+    const blob = new Blob([JSON.stringify(datosFinales, null, 1)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'resumen_full.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('⬇️ JSON descargado', 'exito');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SUBIR A GITHUB
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnVerToken').addEventListener('click', () => {
+    const input = document.getElementById('ghToken');
+    input.type = input.type === 'password' ? 'text' : 'password';
+});
+
+document.getElementById('btnProbarConexion').addEventListener('click', async () => {
+    const token = document.getElementById('ghToken').value.trim();
+    const repo = document.getElementById('ghRepo').value.trim();
+    if (!token || !repo) {
+        toast('⚠️ Completa token y repositorio', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`https://api.github.com/repos/${repo}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (res.ok) {
+            toast('✅ Conexión OK con GitHub', 'exito');
+            log('githubLog', 'Conexión verificada correctamente', 'ok');
+        } else {
+            toast('❌ Error: ' + res.status, 'error');
+            log('githubLog', `Error ${res.status}: ${res.statusText}`, 'err');
+        }
+    } catch (e) {
+        toast('❌ Error de red', 'error');
+        log('githubLog', `Error: ${e.message}`, 'err');
+    }
+});
+
+document.getElementById('btnSubirGitHub').addEventListener('click', async () => {
+    const token = document.getElementById('ghToken').value.trim();
+    const repo = document.getElementById('ghRepo').value.trim();
+    const path = document.getElementById('ghPath').value.trim() || 'resumen_full.json';
+    
+    if (!token || !repo) {
+        toast('⚠️ Completa token y repositorio', 'error');
+        return;
+    }
+    if (datosFinales.length === 0) {
+        toast('⚠️ Genera primero el JSON', 'error');
+        return;
+    }
+    
+    if (document.getElementById('chkRecordar').checked) {
+        localStorage.setItem('gh_repo', repo);
+        localStorage.setItem('gh_token', token);
+    }
+    
+    log('githubLog', `Subiendo ${datosFinales.length} registros a ${repo}/${path}...`, 'info');
+    
+    try {
+        let sha = null;
+        try {
+            const resGet = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (resGet.ok) {
+                const data = await resGet.json();
+                sha = data.sha;
+                log('githubLog', `Archivo existe (SHA: ${sha.substring(0,7)}...). Actualizando.`, 'info');
+            }
+        } catch (e) {}
+        
+        const contenido = btoa(unescape(encodeURIComponent(JSON.stringify(datosFinales, null, 1))));
+        const body = {
+            message: `Actualizar datos - ${new Date().toLocaleString('es-ES')}`,
+            content: contenido,
+            ...(sha && { sha })
+        };
+        
+        const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (res.ok) {
+            log('githubLog', `✅ Subido correctamente a GitHub`, 'ok');
+            toast('✅ Subido a GitHub', 'exito');
+        } else {
+            const err = await res.json();
+            log('githubLog', `❌ Error: ${err.message}`, 'err');
+            toast('❌ Error al subir', 'error');
+        }
+    } catch (e) {
+        log('githubLog', `❌ Error: ${e.message}`, 'err');
+        toast('❌ Error de red', 'error');
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 SUBIR A SUPABASE
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnSubirSupabase').addEventListener('click', async () => {
+    if (datosProcesados.length === 0) {
+        toast('⚠️ No hay datos para subir', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('btnSubirSupabase');
+    btn.disabled = true;
+    btn.textContent = '⏳ Procesando...';
+    
+    log('supabaseLog', `Iniciando subida a Supabase (modo: ${modoSeleccionado})...`, 'info');
+    document.getElementById('supabaseProgress').classList.remove('hidden');
+    
+    try {
+        let datosAInsertar = [];
+        
+        if (modoSeleccionado === 'fusionar') {
+            // ═══ MODO FUSIONAR: solo insertar los que no existen ═══
+            log('supabaseLog', 'Consultando Nº Aviso existentes en Supabase...', 'info');
+            
+            const { data: existentes, error } = await supabaseClient
+                .from('incidencias')
+                .select('n_aviso');
+            
+            if (error) throw error;
+            
+            const avisosExistentes = new Set(
+                existentes
+                    .map(d => (d.n_aviso || '').toString().trim())
+                    .filter(v => v !== '')
+            );
+            
+            log('supabaseLog', `Encontrados ${avisosExistentes.size} Nº Aviso en Supabase`, 'info');
+            
+            // Filtrar solo los nuevos
+            datosAInsertar = datosProcesados.filter(fila => {
+                const nav = getNAviso(fila);
+                if (nav === '') return true;
+                return !avisosExistentes.has(nav);
+            });
+            
+            const duplicados = datosProcesados.length - datosAInsertar.length;
+            log('supabaseLog', `${datosAInsertar.length} registros nuevos, ${duplicados} duplicados (ignorados)`, 'info');
+            
+            document.getElementById('cntNuevos').textContent = datosAInsertar.length;
+            document.getElementById('cntDuplicados').textContent = duplicados;
+            
+        } else {
+            // ═══ MODO REEMPLAZAR: borrar todo e insertar ═══
+            log('supabaseLog', '⚠️ Modo REEMPLAZAR: borrando todos los datos existentes...', 'info');
+            
+            const { error: errorDelete } = await supabaseClient
+                .from('incidencias')
+                .delete()
+                .neq('id', 0);
+            
+            if (errorDelete) throw errorDelete;
+            
+            log('supabaseLog', '✅ Base de datos vaciada', 'ok');
+            datosAInsertar = [...datosProcesados];
+        }
+        
+        if (datosAInsertar.length === 0) {
+            log('supabaseLog', '⚠️ No hay registros nuevos para insertar', 'info');
+            toast('⚠️ No hay registros nuevos', 'error');
+            btn.disabled = false;
+            btn.textContent = '🚀 Subir a Supabase';
+            return;
+        }
+        
+        // Convertir al formato de Supabase
+        const datosConvertidos = datosAInsertar.map(convertirASupabase);
+        
+        log('supabaseLog', `Insertando ${datosConvertidos.length} registros...`, 'info');
+        
+        // Insertar en lotes de 100
+        const LOTE = 100;
+        let insertados = 0;
+        
+        for (let i = 0; i < datosConvertidos.length; i += LOTE) {
+            const lote = datosConvertidos.slice(i, i + LOTE);
+            const { data, error } = await supabaseClient
+                .from('incidencias')
+                .insert(lote);
+            
+            if (error) throw error;
+            
+            insertados += lote.length;
+            const pct = Math.round((insertados / datosConvertidos.length) * 100);
+            document.getElementById('supabaseFill').style.width = pct + '%';
+            log('supabaseLog', `  → Lote ${Math.floor(i/LOTE)+1}: ${lote.length} registros (${pct}%)`, 'ok');
+        }
+        
+        log('supabaseLog', `✅ ¡Completado! ${insertados} registros subidos a Supabase`, 'ok');
+        toast(`✅ ${insertados} registros subidos a Supabase`, 'exito');
+        
+        document.getElementById('cntNuevos').textContent = insertados;
+        
+    } catch (error) {
+        console.error('Error Supabase:', error);
+        log('supabaseLog', `❌ ERROR: ${error.message}`, 'err');
+        toast('❌ Error al subir: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Subir a Supabase';
+        setTimeout(() => {
+            document.getElementById('supabaseProgress').classList.add('hidden');
+            document.getElementById('supabaseFill').style.width = '0%';
+        }, 2000);
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MODO CLARO / OSCURO
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('toggleModo').addEventListener('click', () => {
+    modoOscuro = !modoOscuro;
+    document.body.classList.toggle('light-mode', !modoOscuro);
+    document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+    localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
+});
+document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
 </script>
 
 </body>
