@@ -14,23 +14,56 @@
 <link rel="stylesheet" href="style.css">
 <style>
 /* Stats */
-.stats-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
-.stat-card {
-  background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
-  padding: 14px 20px; border-radius: 8px; box-shadow: var(--shadow); min-width: 160px;
+.stats-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
-.stat-label { font-size: 0.85em; color: var(--text-muted); margin-bottom: 4px; }
-.stat-value { font-family: 'Rajdhani', sans-serif; font-size: 1.6em; font-weight: 700; color: var(--accent); }
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 14px 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  min-width: 160px;
+}
+.stat-label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.6em;
+  font-weight: 700;
+  color: var(--accent);
+}
 
 /* Tabla resumen */
 .table-container {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
-  padding: 16px; box-shadow: var(--shadow); overflow-x: auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
 }
-#tablaResumen { width: 100% !important; }
-#tablaResumen th { white-space: nowrap; font-size: 0.85em; }
-#tablaResumen td { text-align: center; }
-#tablaResumen td:first-child { text-align: left; font-weight: 600; }
+#tablaResumen {
+  width: 100% !important;
+}
+#tablaResumen th {
+  white-space: nowrap;
+  font-size: 0.85em;
+}
+#tablaResumen td {
+  text-align: center;
+}
+#tablaResumen td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
 .cell-zero { color: var(--text-muted); opacity: 0.5; }
 .cell-low { color: var(--text); }
 .cell-medium { color: #ffd166; font-weight: 600; }
@@ -39,27 +72,52 @@
 /* Dropdowns filtros */
 .dropdown { position: relative; display: inline-block; }
 .dd-panel {
-  display: none; position: absolute; z-index: 9999; top: calc(100% + 6px); left: 0;
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.45); width: 260px; padding: 10px; font-size: 12px;
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+  width: 260px;
+  padding: 10px;
+  font-size: 12px;
 }
 .dd-panel.open { display: block; }
 .dd-title {
-  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--accent);
-  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
 }
 .dd-barra { display: flex; gap: 6px; margin-bottom: 8px; }
 .dd-barra button { flex: 1; font-size: 11px; padding: 4px 0; }
 .dd-search {
-  width: 100%; background: var(--input-bg, var(--bg3)); color: var(--text);
-  border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px;
-  margin-bottom: 8px; font-size: 12px; box-sizing: border-box;
+  width: 100%;
+  background: var(--input-bg, var(--bg3));
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  box-sizing: border-box;
 }
 .dd-search:focus { outline: none; border-color: var(--accent); }
 .dd-list { max-height: 260px; overflow-y: auto; }
 .dd-row {
-  display: flex; align-items: center; gap: 8px; padding: 3px 4px;
-  border-radius: 4px; color: var(--text); cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
 }
 .dd-row:hover { background: var(--bg3); }
 .dd-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
@@ -67,8 +125,14 @@
 
 /* Link volver */
 .back-link {
-  display: inline-flex; align-items: center; gap: 6px; color: var(--accent);
-  text-decoration: none; font-size: 0.9em; margin-bottom: 14px; transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9em;
+  margin-bottom: 14px;
+  transition: opacity 0.2s;
 }
 .back-link:hover { opacity: 0.7; }
 </style>
@@ -138,59 +202,60 @@
   <table id="tablaResumen" class="display" width="100%"></table>
 </div>
 
-<!-- ✅ Configuración de Supabase -->
 <script src="supabase-config.js"></script>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// ✅ CORRECCIÓN: Leer el modo de localStorage como el resto de páginas
-// ═══════════════════════════════════════════════════════════════
+// Estado
 let modoOscuro = localStorage.getItem('ct_modo') !== 'light';
 let allData = [];
 let familias = [];
 let tablaDT = null;
-let todosVehiculos = [];          // lista completa de VHLO
-let vehiculosSel = new Set();     // VHLO seleccionados (vacío = todos)
-let ordenAleatorio = false;       // si la tabla está en modo aleatorio
+let todosVehiculos = [];
+let vehiculosSel = new Set();
+let ordenAleatorio = false;
 
-// Aplicar modo al cargar la página
-if (!modoOscuro) document.body.classList.add('light-mode');
-document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-
-// Evento de cambio de modo
+// Modo claro/oscuro
 document.getElementById('toggleModo').addEventListener('click', () => {
   modoOscuro = !modoOscuro;
   document.body.classList.toggle('light-mode', !modoOscuro);
   document.getElementById('toggleModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-  // ✅ CORRECCIÓN: Guardar la preferencia en localStorage
-  localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
   if (tablaDT) tablaDT.draw(false);
 });
 
-// Cargar datos desde Supabase
+// ✅ Cargar datos con paginación (sin límite de 1000)
 async function cargarDatos() {
   try {
-    const { data, error } = await supabaseClient.from('incidencias').select('*');
-    if (error) throw error;
-
-    // Mapear los nombres de Supabase (snake_case) a los que espera el código original
-    const mappedData = data.map(d => ({
-      'FAMILIA AVERIA': d.familia_averia || '',
-      'VHLO': d.vhlo || '',
-      'FECHA AVISO': d.fecha_aviso || ''
-    }));
-
-    // Normalizar y parsear fechas (lógica original intacta)
-    mappedData.forEach(d => {
-      if (d['FAMILIA AVERIA']) {
-        d['FAMILIA AVERIA'] = d['FAMILIA AVERIA'].toString().trim().toUpperCase();
+    let todosLosDatos = [];
+    let desde = 0;
+    const limite = 1000;
+    
+    while (true) {
+      const { data, error } = await supabaseClient
+        .from('incidencias_aux')
+        .select('*')
+        .range(desde, desde + limite - 1)
+        .order('id', { ascending: true });
+      
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      
+      todosLosDatos = todosLosDatos.concat(data);
+      
+      if (data.length < limite) break;
+      desde += limite;
+    }
+    
+    // Normalizar y parsear fechas
+    todosLosDatos.forEach(d => {
+      if (d.familia_averia) {
+        d.familia_averia = d.familia_averia.toString().trim().toUpperCase();
       }
-      if (d['VHLO']) {
-        d['VHLO'] = d['VHLO'].toString().trim();
+      if (d.vhlo) {
+        d.vhlo = d.vhlo.toString().trim();
       }
       try {
-        if (d['FECHA AVISO']) {
-          const parts = d['FECHA AVISO'].split('/').map(Number);
+        if (d.fecha_aviso) {
+          const parts = d.fecha_aviso.split('/').map(Number);
           if (parts.length === 3) {
             const fecha = new Date(parts[2], parts[1] - 1, parts[0]);
             if (!isNaN(fecha)) d.fechaJS = fecha;
@@ -199,13 +264,13 @@ async function cargarDatos() {
       } catch (e) {}
     });
 
-    allData = mappedData.filter(d => d.fechaJS && d.VHLO && d['FAMILIA AVERIA']);
+    allData = todosLosDatos.filter(d => d.fechaJS && d.vhlo && d.familia_averia);
 
     // Obtener familias únicas
-    familias = [...new Set(allData.map(d => d['FAMILIA AVERIA']))].filter(f => f && f !== '****').sort();
+    familias = [...new Set(allData.map(d => d.familia_averia))].filter(f => f && f !== '****').sort();
 
     // Lista completa de vehículos ordenada numéricamente
-    todosVehiculos = [...new Set(allData.map(d => d.VHLO))].filter(Boolean)
+    todosVehiculos = [...new Set(allData.map(d => d.vhlo))].filter(Boolean)
       .sort((a, b) => {
         const na = parseFloat(a), nb = parseFloat(b);
         if (!isNaN(na) && !isNaN(nb)) return na - nb;
@@ -219,8 +284,9 @@ async function cargarDatos() {
     construirPanelVehiculos();
     initControles();
     updateTable();
+    
   } catch (e) {
-    console.error('Error cargando datos desde Supabase:', e);
+    console.error('Error cargando datos:', e);
     alert('Error al cargar datos: ' + e.message);
   }
 }
@@ -230,11 +296,8 @@ function inicializarFechas() {
   const fechas = allData.filter(d => d.fechaJS && !isNaN(d.fechaJS)).map(d => d.fechaJS);
   if (!fechas.length) return;
 
-  const minDate = new Date(Math.min(...fechas));
-  const maxDate = new Date(Math.max(...fechas));
-
-  document.getElementById('fechaInicio').valueAsDate = minDate;
-  document.getElementById('fechaFin').valueAsDate = maxDate;
+  document.getElementById('fechaInicio').valueAsDate = new Date(Math.min(...fechas));
+  document.getElementById('fechaFin').valueAsDate = new Date(Math.max(...fechas));
 
   document.getElementById('fechaInicio').addEventListener('change', updateTable);
   document.getElementById('fechaFin').addEventListener('change', updateTable);
@@ -304,8 +367,8 @@ function updateTable() {
   // Agrupar por vehículo
   const resumen = {};
   filtrados.forEach(d => {
-    const vhlo = d.VHLO;
-    const fam = d['FAMILIA AVERIA'];
+    const vhlo = d.vhlo;
+    const fam = d.familia_averia;
 
     if (!resumen[vhlo]) {
       resumen[vhlo] = { vehiculo: vhlo, total: 0 };
@@ -379,7 +442,7 @@ function setColumnas(visible) {
   });
 }
 
-// ── Panel de vehículos (VHLO) ──
+// ─ Panel de vehículos (VHLO) ──
 function construirPanelVehiculos() {
   const lista = document.getElementById('listaVehiculos');
   lista.innerHTML = '';
@@ -409,7 +472,6 @@ function construirPanelVehiculos() {
   actualizarContadorVeh();
 }
 function setVehiculos(seleccionar) {
-  // Solo afecta a los visibles según el buscador
   document.querySelectorAll('#listaVehiculos .dd-row').forEach(r => {
     if (r.style.display === 'none') return;
     const cb = r.querySelector('input');
