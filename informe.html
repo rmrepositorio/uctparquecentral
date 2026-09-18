@@ -316,19 +316,6 @@
     </div>
     
     <div class="seccion">
-      <h2>⚠️ Averías Reiterativas (≥3 apariciones)</h2>
-      <p style="color: var(--text-muted); font-size: 0.85em; margin: -8px 0 12px 0;">
-        Combinaciones de Vehículo + Deficiencia que se repiten 3 o más veces en el periodo
-      </p>
-      <div style="overflow-x: auto;">
-        <table class="tabla-informe" id="tablaReiteradas">
-          <thead><tr><th>VHLO</th><th>Deficiencia</th><th>Veces</th><th>Familia Avería</th><th>Primera vez</th><th>Última vez</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div class="seccion">
       <h2>🔍 Top 20 Descripciones de Avería</h2>
       <div style="height: 500px;"><canvas id="chartDescripciones"></canvas></div>
     </div>
@@ -346,6 +333,20 @@
     <div class="charts-grid">
       <div class="chart-box"><h3>🚚 Carga Lateral - Subfamilias</h3><div class="chart-wrapper"><canvas id="chartCargaLateral"></canvas></div></div>
       <div class="chart-box"><h3>🚛 Carga Trasera - Subfamilias</h3><div class="chart-wrapper"><canvas id="chartCargaTrasera"></canvas></div></div>
+    </div>
+    
+    <!-- ✅ MOVIDO AL FINAL: Averías Reiterativas -->
+    <div class="seccion">
+      <h2>⚠️ Averías Reiterativas (≥3 apariciones)</h2>
+      <p style="color: var(--text-muted); font-size: 0.85em; margin: -8px 0 12px 0;">
+        Combinaciones de Vehículo + Deficiencia que se repiten 3 o más veces en el periodo
+      </p>
+      <div style="overflow-x: auto;">
+        <table class="tabla-informe" id="tablaReiteradas">
+          <thead><tr><th>VHLO</th><th>Deficiencia</th><th>Veces</th><th>Familia Avería</th><th>Primera vez</th><th>Última vez</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
     
   </div>
@@ -526,7 +527,6 @@ const NOMBRES_CAMPOS = {
   origen_aviso: '📍 Origen Aviso'
 };
 
-// ✅ Inicializar modo al cargar
 if (!modoOscuro) document.body.classList.add('light-mode');
 document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
 
@@ -540,14 +540,12 @@ function getGridColor() {
   return isLight ? '#e0e0e0' : '#444444';
 }
 
-// ✅ NUEVO: Toggle modo claro/oscuro
 function toggleModo() {
   modoOscuro = !modoOscuro;
   document.body.classList.toggle('light-mode', !modoOscuro);
   document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
   localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
   
-  // Regenerar gráficos con los nuevos colores
   if (datosFiltrados.length > 0) {
     actualizarGraficos();
   }
@@ -1505,11 +1503,11 @@ function exportarDOC() {
         <h2>Análisis del Periodo</h2>
         ${document.getElementById('textoInforme').innerHTML}
         
-        <h2>Averías Reiterativas (3 o más apariciones)</h2>
-        ${document.getElementById('tablaReiteradas').outerHTML}
-        
         <h2>Análisis por Familia de Vehículo</h2>
         ${document.getElementById('tablaFamilias').outerHTML}
+        
+        <h2>Averías Reiterativas (3 o más apariciones)</h2>
+        ${document.getElementById('tablaReiteradas').outerHTML}
         
         <div class="pie-pagina">
           Informe generado automáticamente · Control Tráfico - Parque Central<br>
@@ -1718,6 +1716,60 @@ async function exportarPDF() {
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...ACCENT);
+    pdf.text('Análisis por Familia de Vehículo', margin, y);
+    y += 8;
+    
+    const familias = [];
+    document.querySelectorAll('#tablaFamilias tbody tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      if (cells.length >= 5) {
+        familias.push([
+          cells[0].textContent.trim(),
+          cells[1].textContent.trim(),
+          cells[2].textContent.trim(),
+          cells[3].textContent.trim(),
+          cells[4].textContent.trim()
+        ]);
+      }
+    });
+    
+    if (familias.length > 0) {
+      pdf.setFillColor(...ACCENT);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      const headers = ['Familia', 'Total', 'Vehículos', 'Media', '% Total'];
+      const colWidths = [55, 25, 25, 25, 25];
+      let x = margin;
+      headers.forEach((h, i) => {
+        pdf.rect(x, y, colWidths[i], 6, 'F');
+        pdf.text(h, x + 1, y + 4);
+        x += colWidths[i];
+      });
+      y += 6;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...TEXTO_CLARO);
+      familias.forEach((row, idx) => {
+        checkNewPage(8);
+        if (idx % 2 === 0) {
+          pdf.setFillColor(...BG_SECUNDARIO);
+          pdf.rect(margin, y, contentWidth, 6, 'F');
+        }
+        let x = margin;
+        row.forEach((cell, i) => {
+          pdf.text(String(cell).substring(0, 30), x + 1, y + 4);
+          x += colWidths[i];
+        });
+        y += 6;
+      });
+    }
+    
+    // ✅ AL FINAL: Tabla de reiteradas
+    checkNewPage(30);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...ACCENT);
     pdf.text('Averías Reiterativas (3 o más apariciones)', margin, y);
     y += 8;
     
@@ -1767,59 +1819,6 @@ async function exportarPDF() {
         y += 6;
       });
       y += 5;
-    }
-    
-    checkNewPage(30);
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...ACCENT);
-    pdf.text('Análisis por Familia de Vehículo', margin, y);
-    y += 8;
-    
-    const familias = [];
-    document.querySelectorAll('#tablaFamilias tbody tr').forEach(tr => {
-      const cells = tr.querySelectorAll('td');
-      if (cells.length >= 5) {
-        familias.push([
-          cells[0].textContent.trim(),
-          cells[1].textContent.trim(),
-          cells[2].textContent.trim(),
-          cells[3].textContent.trim(),
-          cells[4].textContent.trim()
-        ]);
-      }
-    });
-    
-    if (familias.length > 0) {
-      pdf.setFillColor(...ACCENT);
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
-      const headers = ['Familia', 'Total', 'Vehículos', 'Media', '% Total'];
-      const colWidths = [55, 25, 25, 25, 25];
-      let x = margin;
-      headers.forEach((h, i) => {
-        pdf.rect(x, y, colWidths[i], 6, 'F');
-        pdf.text(h, x + 1, y + 4);
-        x += colWidths[i];
-      });
-      y += 6;
-      
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...TEXTO_CLARO);
-      familias.forEach((row, idx) => {
-        checkNewPage(8);
-        if (idx % 2 === 0) {
-          pdf.setFillColor(...BG_SECUNDARIO);
-          pdf.rect(margin, y, contentWidth, 6, 'F');
-        }
-        let x = margin;
-        row.forEach((cell, i) => {
-          pdf.text(String(cell).substring(0, 30), x + 1, y + 4);
-          x += colWidths[i];
-        });
-        y += 6;
-      });
     }
     
     const totalPages = pdf.internal.getNumberOfPages();
