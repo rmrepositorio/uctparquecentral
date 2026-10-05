@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONTROL TRÁFICO - PARQUE CENTRAL - script.js
-// VERSIÓN CON SUPABASE
+// VERSIÓN CON SUPABASE - CORREGIDA
 // ═══════════════════════════════════════════════════════════════
-
 const PALETA = ['#00d4aa','#7c6fe0','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#f78c6b','#88d498','#c77dff','#48cae4','#f4a261','#e76f51','#2ec4b6','#e9c46a','#a8dadc','#457b9d','#e63946','#2a9d8f','#f3722c'];
 const MAPA_TIPO_ORDEN = { 'L02': 'Accidente', 'L05': 'Golpe / Mal Uso' };
 const ETIQUETA_AVERIA = 'Avería';
@@ -42,7 +41,6 @@ function genColores(n) { return Array.from({length:n},(_,i)=>PALETA[i%PALETA.len
 
 let charts = {}, filtrosActivos = {}, exclusiones = {}, modoOscuro = localStorage.getItem('ct_modo') !== 'light', tablaDT;
 let historial = [], historialIdx = -1;
-
 if (!modoOscuro) document.body.classList.add('light-mode');
 
 function getLegendColor() { return modoOscuro ? '#e0e0f0' : '#1a1a2e'; }
@@ -66,64 +64,85 @@ function cargarEstado() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🔥 CAMBIO PRINCIPAL: LEER DE SUPABASE EN LUGAR DE JSON
+// LEER DE SUPABASE
 // ═══════════════════════════════════════════════════════════════
 obtenerIncidencias()
-    .then(dataRaw => {
-        // Convertir nombres snake_case de Supabase a los nombres con espacios que usa tu código
-        const data = dataRaw.map(row => ({
-            'FAMILIA': (row.familia || '').toString().trim(),
-            'VHLO': (row.vhlo || '').toString().trim(),
-            'CONDUCTOR': (row.conductor || '').toString().trim(),
-            'FAMILIA AVERIA': (row.familia_averia || '').toString().trim(),
-            'DEFICIENCIAS DETECTADAS': (row.deficiencias || '').toString().trim(),
-            'DESCRIPCION AVERIA': (row.descripcion_averia || '').toString().trim(),
-            'FOTO': (row.foto || '').toString().trim(),
-            'FECHA AVISO': (row.fecha_aviso || '').toString().trim(),
-            'HORA': (row.hora || '').toString().trim(),
-            'TURNO': (row.turno || '').toString().trim(),
-            'N  AVISO': (row.n_aviso || '').toString().trim(),
-            'AVISO ANTIGUO?': (row.aviso_antiguo || '').toString().trim(),
-            'ORIGEN AVISO': (row.origen_aviso || '').toString().trim(),
-            'TIPO ORDEN': (row.tipo_orden || '').toString().trim(),
-            'Columna1': row.columna1,
-            'Columna2': (row.columna2 || '').toString().trim(),
-            'Columna3': row.columna3,
-            'Columna4': (row.columna4 || '').toString().trim()
-        }));
+.then(dataRaw => {
+    const data = dataRaw.map(row => ({
+        'FAMILIA': (row.familia || '').toString().trim(),
+        'VHLO': (row.vhlo || '').toString().trim(),
+        'CONDUCTOR': (row.conductor || '').toString().trim(),
+        'FAMILIA AVERIA': (row.familia_averia || '').toString().trim(),
+        'DEFICIENCIAS DETECTADAS': (row.deficiencias || '').toString().trim(),
+        'DESCRIPCION AVERIA': (row.descripcion_averia || '').toString().trim(),
+        'FOTO': (row.foto || '').toString().trim(),
+        'FECHA AVISO': (row.fecha_aviso || '').toString().trim(),
+        'HORA': (row.hora || '').toString().trim(),
+        'TURNO': (row.turno || '').toString().trim(),
+        'N  AVISO': (row.n_aviso || '').toString().trim(),
+        'AVISO ANTIGUO?': (row.aviso_antiguo || '').toString().trim(),
+        'ORIGEN AVISO': (row.origen_aviso || '').toString().trim(),
+        'TIPO ORDEN': (row.tipo_orden || '').toString().trim(),
+        'Columna1': row.columna1,
+        'Columna2': (row.columna2 || '').toString().trim(),
+        'Columna3': row.columna3,
+        'Columna4': (row.columna4 || '').toString().trim()
+    }));
 
-        // ═══ A PARTIR DE AQUÍ, EL CÓDIGO ES EXACTAMENTE EL MISMO ═══
-        const CAMPOS_NORM = ['FAMILIA AVERIA','FAMILIA','ORIGEN AVISO','TURNO','VHLO','TIPO ORDEN'];
-        const normStr = s => s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-        data.forEach(d => {
-            CAMPOS_NORM.forEach(k => { if (d[k]) d[k] = normStr(d[k]); });
-            try {
-                if (!d['FECHA AVISO']) return;
-                const parts = d['FECHA AVISO'].split('/').map(Number);
-                if (parts.length !== 3 || parts.some(isNaN)) return;
-                const fecha = new Date(parts[2], parts[1]-1, parts[0]);
-                if (!isNaN(fecha)) d.fechaJS = fecha;
-            } catch(e) {}
-        });
+    const CAMPOS_NORM = ['FAMILIA AVERIA','FAMILIA','ORIGEN AVISO','TURNO','VHLO','TIPO ORDEN'];
+    const normStr = s => s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
 
-        window.dataTabla = data;
-        cargarEstado();
-        inicializarFechas();
-        inicializarTabla();
-        crearGraficos();
-        renderTags();
-        actualizarGraficos();
-        iniciarResizeAltura();
-    })
-    .catch(e => {
-        console.error('Error Supabase:', e);
-        document.body.insertAdjacentHTML('afterbegin',
-            `<div style="background:#ef4444;color:white;padding:16px;margin:16px;border-radius:8px;z-index:9999;position:relative;">
-                ⚠️ Error al conectar con Supabase. Revisa la configuración en supabase-config.js<br>
-                <small>Detalles: ${e.message}</small>
-            </div>`
-        );
+    data.forEach(d => {
+        CAMPOS_NORM.forEach(k => { if (d[k]) d[k] = normStr(d[k]); });
+
+        // ✅ PARSEO ROBUSTO DE FECHAS - Acepta CUALQUIER formato
+        try {
+            const raw = (d['FECHA AVISO'] || '').toString().trim();
+            if (!raw) return;
+            let fecha;
+
+            // Formato DD/MM/YYYY o D/M/YYYY
+            if (raw.includes('/')) {
+                const parts = raw.split('/').map(Number);
+                if (parts.length === 3 && !parts.some(isNaN)) {
+                    fecha = new Date(parts[2], parts[1]-1, parts[0]);
+                }
+            }
+            // Formato ISO YYYY-MM-DD (como lo manda Supabase)
+            else if (raw.includes('-')) {
+                const parts = raw.split('-').map(Number);
+                if (parts.length === 3 && !parts.some(isNaN)) {
+                    fecha = new Date(parts[0], parts[1]-1, parts[2]);
+                }
+            }
+            // Intento genérico como último recurso
+            if (!fecha) {
+                const intento = new Date(raw);
+                if (!isNaN(intento)) fecha = intento;
+            }
+
+            if (fecha && !isNaN(fecha)) d.fechaJS = fecha;
+        } catch(e) {}
     });
+
+    window.dataTabla = data;
+    cargarEstado();
+    inicializarFechas();
+    inicializarTabla();
+    crearGraficos();
+    renderTags();
+    actualizarGraficos();
+    iniciarResizeAltura();
+})
+.catch(e => {
+    console.error('Error Supabase:', e);
+    document.body.insertAdjacentHTML('afterbegin',
+        `<div style="background:#ef4444;color:white;padding:16px;margin:16px;border-radius:8px;z-index:9999;position:relative;">
+            ⚠️ Error al conectar con Supabase. Revisa la configuración en supabase-config.js<br>
+            <small>Detalles: ${e.message}</small>
+        </div>`
+    );
+});
 
 function inicializarFechas() {
     const fechas = window.dataTabla.filter(d => d.fechaJS && !isNaN(d.fechaJS)).map(d => d.fechaJS);
@@ -136,7 +155,6 @@ function inicializarFechas() {
 
 function crearGraficos() {
     const col = getLegendColor(), grid = getGridColor();
-
     function clickBarra(campo) {
         return (evt, elems) => {
             if (!elems.length) return;
@@ -157,7 +175,6 @@ function crearGraficos() {
             onClick: clickBarra(campo)
         };
     }
-
     charts.familia = new Chart(document.getElementById('graficoFamilia').getContext('2d'), {
         type: 'bar', data: { labels: [], datasets: [{ label: 'Familia Avería', data: [], backgroundColor: [], borderWidth: 0, borderRadius: 3 }] },
         options: opsBarra('FAMILIA AVERIA', true)
@@ -209,7 +226,6 @@ function crearGraficos() {
             scales: { x: { ticks: { color: col, font: { size: 10 } }, grid: { color: grid } }, y: { ticks: { color: col, font: { size: 10 } }, grid: { color: grid } } }
         }
     });
-
     function crearDoughnutEtiquetas(canvasId, borderColor) {
         return new Chart(document.getElementById(canvasId).getContext('2d'), {
             type: 'doughnut',
@@ -256,7 +272,6 @@ function crearGraficos() {
             }]
         });
     }
-
     charts.turno = crearDoughnutEtiquetas('graficoTurno', modoOscuro ? '#1e1e2e' : '#f0f4ff');
     charts.turno.options.onClick = (evt, elems) => {
         if (!elems.length) return;
@@ -264,7 +279,6 @@ function crearGraficos() {
         if (filtrosActivos['TURNO'] === val) delete filtrosActivos['TURNO']; else filtrosActivos['TURNO'] = val;
         pushHistorial(); renderTags(); actualizarGraficos();
     };
-
     charts.tipoOrden = crearDoughnutEtiquetas('graficoTipoOrden', modoOscuro ? '#1e1e2e' : '#f0f4ff');
     charts.tipoOrden.options.onClick = (evt, elems) => {
         if (!elems.length) return;
@@ -273,7 +287,6 @@ function crearGraficos() {
         else filtrosActivos['_TIPO_ORDEN_LABEL'] = val;
         pushHistorial(); renderTags(); actualizarGraficos();
     };
-
     charts.recurrencia = new Chart(document.getElementById('graficoRecurrencia').getContext('2d'), {
         type: 'doughnut',
         data: {
@@ -320,7 +333,6 @@ function crearGraficos() {
         else filtrosActivos['_REINCIDENCIA'] = tipo;
         pushHistorial(); renderTags(); actualizarGraficos();
     };
-
     charts.cargaTrasera = crearDoughnutEtiquetas('graficoCargaTrasera', modoOscuro ? '#0f0f1a' : '#f0f4ff');
     charts.cargaTrasera.options.onClick = (evt, elems) => {
         if (!elems.length) return;
@@ -329,7 +341,6 @@ function crearGraficos() {
         else filtrosActivos['_SUBFAMILIA_TRASERA'] = val;
         pushHistorial(); renderTags(); actualizarGraficos();
     };
-
     charts.cargaLateral = crearDoughnutEtiquetas('graficoCargaLateral', modoOscuro ? '#0f0f1a' : '#f0f4ff');
     charts.cargaLateral.options.onClick = (evt, elems) => {
         if (!elems.length) return;
@@ -338,7 +349,6 @@ function crearGraficos() {
         else filtrosActivos['_SUBFAMILIA_LATERAL'] = val;
         pushHistorial(); renderTags(); actualizarGraficos();
     };
-
     document.querySelectorAll('.btn-filtro-panel').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -356,7 +366,6 @@ function inicializarTabla() {
         $(this).html(`<input type="text" placeholder="${title}" style="width:100%;font-size:11px;padding:2px 4px;background:var(--input-bg);color:var(--input-text);border:1px solid var(--border);border-radius:3px;" />`);
         $('input', this).on('keyup change', function() { if (tablaDT.column(i).search() !== this.value) tablaDT.column(i).search(this.value).draw(); });
     });
-
     tablaDT = $('#tablaAverias').DataTable({
         data: [],
         columns: [
@@ -378,7 +387,22 @@ function inicializarTabla() {
             { title: 'Deficiencias', data: 'DEFICIENCIAS DETECTADAS', width: '180px', defaultContent: '-',
                 render: function(d) { return d ? `<span title="${d}" style="display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d}</span>` : '-'; }
             },
-            { title: 'Fecha Aviso', data: 'FECHA AVISO', width: '90px' },
+            // ✅ CAMBIO CLAVE: Ordenar por string YYYYMMDD
+            {
+                title: 'Fecha Aviso',
+                data: 'FECHA AVISO',
+                width: '90px',
+                render: function(data, type, row) {
+                    if (type === 'sort' || type === 'type') {
+                        if (!row.fechaJS) return '00000000';
+                        const y = row.fechaJS.getFullYear();
+                        const m = String(row.fechaJS.getMonth()+1).padStart(2,'0');
+                        const d = String(row.fechaJS.getDate()).padStart(2,'0');
+                        return y + m + d;
+                    }
+                    return data || '-';
+                }
+            },
             { title: 'Turno', data: 'TURNO', width: '70px' },
             { title: 'Origen Aviso', data: 'ORIGEN AVISO', width: '110px' },
             { title: 'Tipo Orden', data: 'TIPO ORDEN', width: '90px' },
@@ -408,7 +432,6 @@ function inicializarTabla() {
         },
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]]
     });
-
     const btnAleatorio = document.getElementById('btnAleatorio');
     if (btnAleatorio) {
         btnAleatorio.addEventListener('click', function() {
@@ -429,7 +452,6 @@ function inicializarTabla() {
             }
         });
     }
-
     document.getElementById('btnColumnas').addEventListener('click', function(e) {
         e.stopPropagation();
         let menu = document.getElementById('menuColumnas');
@@ -459,7 +481,6 @@ function inicializarTabla() {
         });
         setTimeout(() => document.addEventListener('click', cerrarAlFuera), 10);
     });
-
     function crearInputPaginaManual() {
         const paginacion = document.querySelector('#tablaAverias_paginate');
         if (!paginacion) return;
@@ -496,7 +517,6 @@ function inicializarTabla() {
         input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); irAPagina(); } });
         btn.addEventListener('click', e => { e.preventDefault(); irAPagina(); });
     }
-
     $('#tablaAverias').on('draw.dt', function() { setTimeout(crearInputPaginaManual, 100); });
     setTimeout(crearInputPaginaManual, 500);
 }
@@ -504,20 +524,17 @@ function inicializarTabla() {
 function actualizarGraficos() {
     const fi = document.getElementById('fechaInicio').valueAsDate;
     const ff = document.getElementById('fechaFin').valueAsDate;
-
     let datos = window.dataTabla.filter(d => {
         if (!d.fechaJS || isNaN(d.fechaJS)) return false;
         if (!fi || !ff) return true;
         return new Date(d.fechaJS.getFullYear(), d.fechaJS.getMonth(), d.fechaJS.getDate()) - new Date(fi.getFullYear(), fi.getMonth(), fi.getDate()) >= 0 &&
                new Date(d.fechaJS.getFullYear(), d.fechaJS.getMonth(), d.fechaJS.getDate()) - new Date(ff.getFullYear(), ff.getMonth(), ff.getDate()) <= 0;
     });
-
     for (const campo in exclusiones) {
         if (exclusiones[campo].size) {
             datos = datos.filter(d => !exclusiones[campo].has((d[campo] || '').toString().trim().toUpperCase()));
         }
     }
-
     const camposDirectos = ['FAMILIA AVERIA', 'FAMILIA', 'ORIGEN AVISO', 'TURNO', 'VHLO', 'TIPO ORDEN'];
     for (const k in filtrosActivos) {
         if (!filtrosActivos[k]) continue;
@@ -525,11 +542,8 @@ function actualizarGraficos() {
         if (!camposDirectos.includes(k)) continue;
         datos = datos.filter(d => d[k] && d[k].toString().trim().toUpperCase() === filtrosActivos[k].toString().trim().toUpperCase());
     }
-
     datos = datos.filter(d => d.VHLO && d.VHLO.toString().trim() !== "");
-
     if (filtrosActivos['_DESCRIPCION_NORM']) datos = datos.filter(d => getDescripcion(d) === filtrosActivos['_DESCRIPCION_NORM']);
-
     if (filtrosActivos['_TIPO_ORDEN_LABEL']) {
         const etiqueta = filtrosActivos['_TIPO_ORDEN_LABEL'];
         const mapping = getCodigosParaEtiqueta(etiqueta);
@@ -542,7 +556,6 @@ function actualizarGraficos() {
             datos = datos.filter(d => mapping.includes((d['TIPO ORDEN'] || '').toString().trim().toUpperCase()));
         }
     }
-
     if (filtrosActivos['_REINCIDENCIA']) {
         const tipo = filtrosActivos['_REINCIDENCIA'];
         const vhCountBase = {};
@@ -559,7 +572,6 @@ function actualizarGraficos() {
             datos = datos.filter(d => reincidentesSet.has(d.VHLO));
         }
     }
-
     if (filtrosActivos['_SUBFAMILIA_TRASERA']) {
         const subFam = filtrosActivos['_SUBFAMILIA_TRASERA'];
         datos = datos.filter(d => getSubfamiliaTrasera(d['VHLO'], d['FAMILIA']) === subFam);
@@ -568,7 +580,6 @@ function actualizarGraficos() {
         const subFam = filtrosActivos['_SUBFAMILIA_LATERAL'];
         datos = datos.filter(d => getSubfamiliaLateral(d['VHLO']) === subFam);
     }
-
     if (tablaDT) {
         const datosFiltrados = datos.filter(d => d.VHLO && d.VHLO.toString().trim() !== '');
         tablaDT.clear(); tablaDT.rows.add(datosFiltrados); tablaDT.draw();
@@ -582,14 +593,12 @@ function actualizarGraficos() {
             tablaDT.clear(); tablaDT.rows.add(data); tablaDT.draw(false);
         }
     }
-
     document.getElementById('totalAverias').textContent = datos.length.toLocaleString('es-ES');
     const dias = new Set(datos.filter(d => d.fechaJS).map(d => d.fechaJS.toDateString())).size;
     document.getElementById('promedioDiario').textContent = dias ? (datos.length / dias).toFixed(1) : '0';
     const vc = {};
     datos.forEach(d => { if (d.VHLO && d.VHLO !== '***') vc[d.VHLO] = (vc[d.VHLO] || 0) + 1; });
     document.getElementById('vehiculoTop').textContent = Object.keys(vc).length ? Object.keys(vc).reduce((a, b) => vc[a] > vc[b] ? a : b) : '-';
-
     [{ key: 'familia', campo: 'FAMILIA AVERIA' }, { key: 'origen', campo: 'ORIGEN AVISO' }, { key: 'familiaVeh', campo: 'FAMILIA' }, { key: 'vhlo', campo: 'VHLO' }]
     .forEach(({ key, campo }) => {
         const cnt = {};
@@ -603,7 +612,6 @@ function actualizarGraficos() {
         c.options.plugins.legend.labels.color = getLegendColor();
         c.update();
     });
-
     if (charts.descripcion) {
         const cntD = {};
         datos.forEach(d => { const v = getDescripcion(d); if (v && v !== '****') cntD[v] = (cntD[v] || 0) + 1; });
@@ -617,7 +625,6 @@ function actualizarGraficos() {
         charts.descripcion.options.plugins.legend.labels.color = getLegendColor();
         charts.descripcion.update();
     }
-
     if (charts.tipoOrden) {
         const cnt = {};
         datos.forEach(d => { const etiqueta = getEtiquetaTipoOrden(d['TIPO ORDEN']); if (!etiqueta) return; cnt[etiqueta] = (cnt[etiqueta] || 0) + 1; });
@@ -634,7 +641,6 @@ function actualizarGraficos() {
         charts.tipoOrden.data.datasets[0].borderColor = modoOscuro ? '#1e1e2e' : '#f0f4ff';
         charts.tipoOrden.update();
     }
-
     if (charts.recurrencia) {
         const vhCount = {};
         datos.forEach(d => { const v = d.VHLO; if (!v || v === '****') return; vhCount[v] = (vhCount[v] || 0) + 1; });
@@ -648,7 +654,6 @@ function actualizarGraficos() {
         else charts.recurrencia.data.datasets[0].backgroundColor = ['#06d6a0', '#ef476f'];
         charts.recurrencia.update();
     }
-
     if (charts.turno) {
         const ctT = {};
         datos.forEach(d => { const v = d['TURNO']; if (v && v !== '****') ctT[v] = (ctT[v] || 0) + 1; });
@@ -658,7 +663,6 @@ function actualizarGraficos() {
         charts.turno.data.datasets[0].borderColor = modoOscuro ? '#1e1e2e' : '#f0f4ff';
         charts.turno.update();
     }
-
     if (charts.topReincidentes) {
         const vhCount = {};
         datos.forEach(d => { const v = d.VHLO; if (!v || v === '***') return; vhCount[v] = (vhCount[v] || 0) + 1; });
@@ -683,7 +687,6 @@ function actualizarGraficos() {
         charts.topReincidentes.options.scales.y.grid.color = getGridColor();
         charts.topReincidentes.update();
     }
-
     if (charts.evolucion) {
         const evol = {};
         datos.forEach(d => {
@@ -703,7 +706,6 @@ function actualizarGraficos() {
         charts.evolucion.options.plugins.legend.labels.color = getLegendColor();
         charts.evolucion.update();
     }
-
     if (charts.cargaTrasera) {
         const trasera = datos.filter(d => d['FAMILIA'] === 'CARGA_TRASERA' || (d['FAMILIA'] || '').toUpperCase().includes('MINICOMPACTADOR'));
         const cntT = {}, vhlosT = {};
@@ -729,7 +731,6 @@ function actualizarGraficos() {
             }).join('');
         }
     }
-
     if (charts.cargaLateral) {
         const lateral = datos.filter(d => d['FAMILIA'] === 'CARGA_LATERAL');
         const cntL = {}, vhlosL = {};
@@ -775,7 +776,6 @@ function cerrarAlFuera(e) {
     ['menuExcl', 'menuColumnas'].forEach(id => { const m = document.getElementById(id); if (m && !m.contains(e.target)) m.remove(); });
     document.removeEventListener('click', cerrarAlFuera);
 }
-
 function abrirMenuExcl(campo, valores, anchorEl) {
     cerrarMenus();
     const menu = document.createElement('div'); menu.id = 'menuExcl'; menu.className = 'excl-menu';
@@ -847,7 +847,6 @@ function pushHistorial() {
     historialIdx = historial.length - 1;
     actualizarBotones(); guardarEstado();
 }
-
 document.getElementById('btnAtras').addEventListener('click', () => {
     if (historialIdx > 0) { historialIdx--; filtrosActivos = JSON.parse(JSON.stringify(historial[historialIdx])); renderTags(); actualizarGraficos(); actualizarBotones(); guardarEstado(); }
 });
