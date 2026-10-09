@@ -15,7 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-  body { padding: 0; }
+  body { padding: 0; background-color: #ffffff !important; color: #212529 !important; }
   .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
   .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); text-decoration: none; font-size: 0.9em; margin-bottom: 14px; }
   .back-link:hover { opacity: 0.7; }
@@ -226,20 +226,37 @@
     .seccion { page-break-inside: avoid; border: 1px solid #ccc; }
     .container { max-width: 100%; padding: 0; }
   }
+
+  /* FORZAR MODO CLARO Y OCULTAR BOTÓN */
+  #btnModo { display: none !important; }
+  .container, .kpi-card, .seccion, .chart-box, .filtros-panel, .texto-informe, .multi-dropdown {
+    background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important;
+  }
+  .kpi-value, .seccion h2, .chart-box h3, .tabla-informe th, .tabla-informe td, .loading-text { color: #212529 !important; }
+  .kpi-label, .informe-header .subtitle, .filtros-panel label, .loading-progress, .informe-footer { color: #6c757d !important; }
+  .tabla-informe th { background-color: #f8f9fa !important; }
+  .tabla-informe tr:nth-child(even) td { background-color: #f8f9fa !important; }
+  .loading-overlay { background: rgba(255,255,255,0.9) !important; }
+  canvas { background-color: #ffffff !important; }
+  
+  @media print {
+    body { background: white !important; color: black !important; }
+    .header, .back-link, .filtros-panel, .header-actions, .informe-footer, #btnModo { display: none !important; }
+    .seccion, .kpi-card, .chart-box, .texto-informe { background: white !important; color: black !important; border: 1px solid #ccc !important; }
+  }
 </style>
 </head>
-<body>
+<body class="light-mode">
 
 <div class="container">
 <a href="index.html" class="btn-nav">← Dashboard</a>
-  <a href="http://uctlipasam.vercel.app" class="btn-nav">💒 SELECCIONAR DASHBOARD</a>
+    <a href="http://uctlipasam.vercel.app" class="btn-nav">💒 SELECCIONAR DASHBOARD</a>
   <a href="incidencias.html" class="btn-nav">📄 Listado Averias</a>
   <a href="reiteradas.html" class="btn-nav">📚 Averias Reiteradas</a>
   <a href="informe.html" class="btn-nav">📜 Ver Informe</a>
   <a href="resumen_vehiculos.html" class="btn-nav">📊 Tabla Resumen</a>
 <a href="pegar.html" class="btn-nav">📥 Insertar nuevos datos</a>
-
-  
+<div><br><br></div>
   <div class="informe-header">
     <div>
       <h1>📊 Informe General de Averías</h1>
@@ -489,7 +506,7 @@ Chart.register(pluginDataLabels);
 let datosOriginales = [];
 let datosFiltrados = [];
 let charts = {};
-let modoOscuro = localStorage.getItem('ct_modo') !== 'light';
+let modoOscuro = false; // Forzado a modo claro
 
 let filtrosMulti = {
   familia: new Set(),
@@ -527,28 +544,20 @@ const NOMBRES_CAMPOS = {
   origen_aviso: '📍 Origen Aviso'
 };
 
-if (!modoOscuro) document.body.classList.add('light-mode');
-document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+document.body.classList.add('light-mode');
+document.getElementById('btnModo').textContent = '☀ Modo claro';
 
 function getTextColor() {
-  const isLight = document.body.classList.contains('light-mode');
-  return isLight ? '#333333' : '#e0e0e0';
+  return '#212529'; // Forzado a oscuro
 }
 
 function getGridColor() {
-  const isLight = document.body.classList.contains('light-mode');
-  return isLight ? '#e0e0e0' : '#444444';
+  return '#dee2e6'; // Forzado a gris claro
 }
 
 function toggleModo() {
-  modoOscuro = !modoOscuro;
-  document.body.classList.toggle('light-mode', !modoOscuro);
-  document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-  localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
-  
-  if (datosFiltrados.length > 0) {
-    actualizarGraficos();
-  }
+  // Desactivado para forzar modo claro
+  return;
 }
 
 function normStr(s) { return s ? s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase() : ''; }
@@ -576,7 +585,6 @@ function getEtiquetaTipoOrden(codigo) {
   return MAPA_TIPO_ORDEN[cod] || ETIQUETA_AVERIA;
 }
 
-// ✅ CORREGIDO: Devuelve 'OTROS' en lugar de null para capturar vehículos no listados
 function getSubfamiliaTrasera(vhlo, familia) {
   if (familia && familia.includes('MINICOMPACTADOR')) return 'MINICOMPACTADORES';
   const n = parseInt(vhlo);
@@ -588,7 +596,6 @@ function getSubfamiliaTrasera(vhlo, familia) {
   return 'OTROS';
 }
 
-// ✅ CORREGIDO: Devuelve 'OTROS' en lugar de null para capturar vehículos no listados
 function getSubfamiliaLateral(vhlo) {
   const n = parseInt(vhlo);
   if (isNaN(n)) return 'OTROS';
@@ -1190,7 +1197,6 @@ function actualizarGraficos() {
     });
   }
   
-  // ✅ CORREGIDO: Filtro más flexible para capturar cualquier variante de "LATERAL" o "TRASERA"
   const datosLat = datosFiltrados.filter(d => d.familia && d.familia.includes('LATERAL'));
   const cntL = {};
   datosLat.forEach(d => { 
@@ -1444,7 +1450,6 @@ function exportarDOC() {
     const fi = document.getElementById('fechaInicio').value || 'N/A';
     const ff = document.getElementById('fechaFin').value || 'N/A';
     
-    // ✅ NUEVO: Capturar imágenes de todos los gráficos en base64
     const graficosImagenes = {};
     const graficosConfig = [
       { chart: 'familia', titulo: 'Distribución por Familia de Avería' },
@@ -1460,7 +1465,6 @@ function exportarDOC() {
       { chart: 'cargaTrasera', titulo: 'Carga Trasera - Subfamilias' }
     ];
     
-    // ✅ Capturar cada gráfico como imagen base64
     graficosConfig.forEach(cfg => {
       if (charts[cfg.chart]) {
         try {
@@ -1474,7 +1478,6 @@ function exportarDOC() {
       }
     });
     
-    // ✅ Generar HTML de los gráficos
     let htmlGraficos = '';
     graficosConfig.forEach(cfg => {
       if (graficosImagenes[cfg.chart]) {
@@ -1616,22 +1619,22 @@ async function exportarPDF() {
     const contentWidth = pageWidth - (margin * 2);
     let y = margin;
     
-    const BG_OSCURO = [15, 15, 26];
-    const BG_SECUNDARIO = [30, 30, 45];
-    const TEXTO_CLARO = [224, 224, 224];
-    const TEXTO_SUAVE = [160, 160, 170];
+    const BG_CLARO = [255, 255, 255];
+    const BG_SECUNDARIO = [248, 249, 250];
+    const TEXTO_OSCURO = [33, 37, 41];
+    const TEXTO_SUAVE = [108, 117, 125];
     const ACCENT = [0, 212, 170];
     
     function checkNewPage(neededHeight) {
       if (y + neededHeight > pageHeight - margin) {
         pdf.addPage();
         y = margin;
-        pdf.setFillColor(...BG_OSCURO);
+        pdf.setFillColor(...BG_CLARO);
         pdf.rect(0, 0, pageWidth, pageHeight, 'F');
       }
     }
     
-    pdf.setFillColor(...BG_OSCURO);
+    pdf.setFillColor(...BG_CLARO);
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
     
     pdf.setFillColor(...ACCENT);
@@ -1645,7 +1648,7 @@ async function exportarPDF() {
     pdf.text('Parque Central - Unidad Control Tráfico', pageWidth / 2, 45, { align: 'center' });
     
     y = 75;
-    pdf.setTextColor(...TEXTO_CLARO);
+    pdf.setTextColor(...TEXTO_OSCURO);
     pdf.setFontSize(10);
     pdf.text(`Fecha generación: ${new Date().toLocaleString('es-ES')}`, margin, y);
     const fi = document.getElementById('fechaInicio').value;
@@ -1718,7 +1721,7 @@ async function exportarPDF() {
         
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...TEXTO_CLARO);
+        pdf.setTextColor(...TEXTO_OSCURO);
         
         const lineasUnicas = [...new Set(lineasTexto)];
         lineasUnicas.forEach(linea => {
@@ -1815,7 +1818,7 @@ async function exportarPDF() {
       y += 6;
       
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...TEXTO_CLARO);
+      pdf.setTextColor(...TEXTO_OSCURO);
       familias.forEach((row, idx) => {
         checkNewPage(8);
         if (idx % 2 === 0) {
@@ -1869,7 +1872,7 @@ async function exportarPDF() {
       y += 6;
       
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...TEXTO_CLARO);
+      pdf.setTextColor(...TEXTO_OSCURO);
       reiteradas.slice(0, 30).forEach((row, idx) => {
         checkNewPage(8);
         if (idx % 2 === 0) {
@@ -1899,7 +1902,7 @@ async function exportarPDF() {
     pdf.save(`informe_averias_${fechaArchivo}.pdf`);
     
     hideLoading();
-    toast('✅ PDF oscuro descargado', 'exito');
+    toast('✅ PDF descargado en modo claro', 'exito');
     
   } catch (e) {
     console.error('Error PDF:', e);
@@ -1914,7 +1917,7 @@ function exportarExcel() {
     const wb = XLSX.utils.book_new();
     
     const resumen = [
-      ['INFORME DE AVERÍAS - PARQUE CENTRAL'],
+      ['INFORME DE AVERÍAS - Parque Central'],
       ['Generado:', new Date().toLocaleString('es-ES')],
       ['Periodo:', document.getElementById('fechaInicio').value + ' a ' + document.getElementById('fechaFin').value],
       [], ['RESUMEN EJECUTIVO'],
