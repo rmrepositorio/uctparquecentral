@@ -726,14 +726,16 @@ document.addEventListener('click', (e) => {
 });
 
 // Modo claro/oscuro
-document.getElementById('btnModo').addEventListener('click', () => {
-  modoOscuro = !modoOscuro;
-  document.body.classList.toggle('light-mode', !modoOscuro);
-  document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-  localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
-});
-document.getElementById('btnModo').textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
-
+const btnModo = document.getElementById('toggleModo'); // <-- CORREGIDO
+if (btnModo) {
+  btnModo.addEventListener('click', () => {
+    modoOscuro = !modoOscuro;
+    document.body.classList.toggle('light-mode', !modoOscuro);
+    btnModo.textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+    localStorage.setItem('ct_modo', modoOscuro ? 'dark' : 'light');
+  });
+  btnModo.textContent = modoOscuro ? '☀ Modo claro' : '🌙 Modo oscuro';
+}
 // ═══════════════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════════════
